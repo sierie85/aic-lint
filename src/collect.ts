@@ -12,6 +12,14 @@ function readConfigFile(absPath: string, root: string): ConfigFile {
   }
 }
 
+function readFileIfExists(absPath: string, root: string): ConfigFile | null {
+  return existsSync(absPath) ? readConfigFile(absPath, root) : null
+}
+
+function compact<T>(...items: (T | null | undefined)[]): T[] {
+  return items.filter((x): x is T => x != null)
+}
+
 const IGNORED_DIRS = new Set(["node_modules", "dist", "build", "coverage", "vendor"])
 
 function findFiles(dir: string, name: string): string[] {
@@ -46,17 +54,10 @@ export function collect(projectRoot: string): ProjectConfig {
   const skills = readDir(join(root, ".claude", "commands"), ".md", root)
   const agents = readDir(join(root, ".claude", "agents"), ".md", root)
 
-  const agentsPath = join(root, "AGENTS.md")
-  const agentsMd = existsSync(agentsPath) ? readConfigFile(agentsPath, root) : null
-
-  const agentsOverridePath = join(root, "AGENTS.override.md")
-  const agentsOverrideMd = existsSync(agentsOverridePath) ? readConfigFile(agentsOverridePath, root) : null
-
-  const codexAgentsPath = join(root, ".codex", "AGENTS.md")
-  const codexAgentsMd = existsSync(codexAgentsPath) ? readConfigFile(codexAgentsPath, root) : null
-
-  const geminiPath = join(root, "GEMINI.md")
-  const geminiMd = existsSync(geminiPath) ? readConfigFile(geminiPath, root) : null
+  const agentsMd = readFileIfExists(join(root, "AGENTS.md"), root)
+  const agentsOverrideMd = readFileIfExists(join(root, "AGENTS.override.md"), root)
+  const codexAgentsMd = readFileIfExists(join(root, ".codex", "AGENTS.md"), root)
+  const geminiMd = readFileIfExists(join(root, "GEMINI.md"), root)
 
   const aiDocs = readDir(join(root, "docs", "ai"), ".md", root)
 
@@ -69,4 +70,22 @@ export function collect(projectRoot: string): ProjectConfig {
     .map((p) => readConfigFile(p, root))
 
   return { root, claudeMdFiles, skills, agents, agentsMd, agentsOverrideMd, codexAgentsMd, geminiMd, aiDocs, jsonConfigs }
+}
+
+// Alle Prosa-/Markdown-Dateien — relevant für Checks, die Inhalt parsen
+// (tote Referenzen, Redundanz). JSON-Configs sind hier bewusst ausgenommen.
+export function markdownFiles(config: ProjectConfig): ConfigFile[] {
+  return [
+    ...config.claudeMdFiles,
+    ...config.skills,
+    ...config.agents,
+    ...config.aiDocs,
+    ...compact(config.agentsMd, config.agentsOverrideMd, config.codexAgentsMd, config.geminiMd),
+  ]
+}
+
+// Wirklich alle eingelesenen Dateien — relevant für den Secret-Scan,
+// der nichts auslassen darf.
+export function allFiles(config: ProjectConfig): ConfigFile[] {
+  return [...markdownFiles(config), ...config.jsonConfigs]
 }

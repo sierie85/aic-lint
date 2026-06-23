@@ -23,7 +23,8 @@ Alle Checks laufen rein lokal und deterministisch. Jeder Befund hat eine Stufe:
 - Pfadartige Datei-Referenzen in Backticks (mit `/`, z. B. `` `src/foo.ts` ``) oder
   Markdown-Links, die im Projekt nicht existieren. Blanke Dateinamen
   (`` `settings.json` ``), URLs, Anker (`#...`) und Globs werden ignoriert.
-- Geprüft in: `CLAUDE.md`, Skills, Agents, `AGENTS.md`.
+- Geprüft in allen Markdown-Quellen: `CLAUDE.md`, Skills, Agents, `AGENTS.md`,
+  `AGENTS.override.md`, `.codex/AGENTS.md`, `GEMINI.md` und `docs/ai/*.md`.
 
 ### Skill-Qualität
 - **Stufe:** WARN

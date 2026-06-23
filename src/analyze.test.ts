@@ -36,12 +36,34 @@ test("checkDeadRefs flags refs that do not exist (injected fileExists)", () => {
   assert.match(findings[0].message, /missing\.ts/)
 })
 
+test("checkDeadRefs also scans GEMINI.md and docs/ai", () => {
+  const config = makeConfig({
+    geminiMd: cf("GEMINI.md", "siehe `src/gone.ts`"),
+    aiDocs: [cf("docs/ai/x.md", "siehe `docs/missing.md`")],
+  })
+  const findings = checkDeadRefs(config, () => false)
+  assert.equal(findings.length, 2)
+})
+
 test("checkAgentsParity: AGENTS.md without CLAUDE.md warns", () => {
   const findings = checkAgentsParity(makeConfig({ agentsMd: cf("AGENTS.md", "x") }))
   assert.equal(findings[0].level, "WARN")
 })
 
-test("checkAgentsParity: CLAUDE.md without AGENTS.md gives info", () => {
+test("checkAgentsParity: .codex/AGENTS.md without CLAUDE.md warns", () => {
+  const findings = checkAgentsParity(makeConfig({ codexAgentsMd: cf(".codex/AGENTS.md", "x") }))
+  assert.equal(findings[0].level, "WARN")
+})
+
+test("checkAgentsParity: CLAUDE.md plus any Codex config gives no finding", () => {
+  const config = makeConfig({
+    claudeMdFiles: [cf("CLAUDE.md", "x")],
+    codexAgentsMd: cf(".codex/AGENTS.md", "x"),
+  })
+  assert.equal(checkAgentsParity(config).length, 0)
+})
+
+test("checkAgentsParity: CLAUDE.md without any Codex config gives info", () => {
   const findings = checkAgentsParity(makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "x")] }))
   assert.equal(findings[0].level, "INFO")
 })

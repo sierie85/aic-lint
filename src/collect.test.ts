@@ -49,6 +49,15 @@ test("collect detects AGENTS.md, GEMINI.md and docs/ai", () => {
   assert.equal(config.aiDocs.length, 1)
 })
 
+test("collect detects Codex AGENTS.override.md and .codex/AGENTS.md", () => {
+  write("AGENTS.override.md")
+  write(".codex/AGENTS.md")
+  const config = collect(root)
+  assert.ok(config.agentsOverrideMd)
+  assert.ok(config.codexAgentsMd)
+  assert.equal(config.codexAgentsMd?.relPath, join(".codex", "AGENTS.md"))
+})
+
 test("collect does not recurse into node_modules or dist", () => {
   write("CLAUDE.md", "root")
   write("node_modules/some-pkg/CLAUDE.md", "fremd")

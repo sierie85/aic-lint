@@ -1,6 +1,7 @@
 import { existsSync } from "fs"
 import { join } from "path"
 import type { Finding, ProjectConfig } from "./types.js"
+import { allFiles, markdownFiles } from "./collect.js"
 import { parseFrontmatter } from "./frontmatter.js"
 import { scanSecrets } from "./secrets.js"
 import { extractFileRefs, extractH2Headings, stripCodeFences } from "./markdown.js"
@@ -28,15 +29,7 @@ export function checkClaudeMdLength(config: ProjectConfig): Finding[] {
 
 export function checkDeadRefs(config: ProjectConfig, fileExists: FileExists = existsSync): Finding[] {
   const findings: Finding[] = []
-  const files = [
-    ...config.claudeMdFiles,
-    ...config.skills,
-    ...config.agents,
-    ...(config.agentsMd ? [config.agentsMd] : []),
-    ...(config.agentsOverrideMd ? [config.agentsOverrideMd] : []),
-    ...(config.codexAgentsMd ? [config.codexAgentsMd] : []),
-  ]
-  for (const file of files) {
+  for (const file of markdownFiles(config)) {
     for (const ref of extractFileRefs(file.content)) {
       if (!fileExists(join(config.root, ref))) {
         findings.push({ level: "ERROR", message: `Toter Pfad in ${file.relPath}: \`${ref}\`` })
@@ -181,18 +174,7 @@ export function checkJsonConfigs(config: ProjectConfig): Finding[] {
 
 export function checkSecrets(config: ProjectConfig): Finding[] {
   const findings: Finding[] = []
-  const files = [
-    ...config.claudeMdFiles,
-    ...config.skills,
-    ...config.agents,
-    ...config.jsonConfigs,
-    ...config.aiDocs,
-    ...(config.agentsMd ? [config.agentsMd] : []),
-    ...(config.agentsOverrideMd ? [config.agentsOverrideMd] : []),
-    ...(config.codexAgentsMd ? [config.codexAgentsMd] : []),
-    ...(config.geminiMd ? [config.geminiMd] : []),
-  ]
-  for (const file of files) {
+  for (const file of allFiles(config)) {
     for (const m of scanSecrets(file.content)) {
       findings.push({ level: "ERROR", message: `Mögliches Secret in ${file.relPath}: ${m.kind} (${m.snippet})` })
     }
