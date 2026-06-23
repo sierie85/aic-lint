@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
 set -e
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Resolve symlinks to find the real package root (npm global install creates a symlink)
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$(cd "$(dirname "$SOURCE")/.." && pwd)"
 exec "$DIR/node_modules/.bin/tsx" "$DIR/src/index.ts" "$@"
