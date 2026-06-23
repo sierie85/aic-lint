@@ -16,6 +16,8 @@ export function makeConfig(overrides: Partial<ProjectConfig> = {}): ProjectConfi
     skills: [],
     agents: [],
     agentsMd: null,
+    agentsOverrideMd: null,
+    codexAgentsMd: null,
     geminiMd: null,
     aiDocs: [],
     jsonConfigs: [],

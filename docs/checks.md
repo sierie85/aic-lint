@@ -43,10 +43,10 @@ Alle Checks laufen rein lokal und deterministisch. Jeder Befund hat eine Stufe:
 
 ## Multi-Tool-Parität
 
-### AGENTS.md ↔ CLAUDE.md
+### Codex ↔ CLAUDE.md
 - **Stufe:** WARN / INFO
-- WARN: `AGENTS.md` vorhanden, aber keine `CLAUDE.md`.
-- INFO: `CLAUDE.md` vorhanden, aber keine `AGENTS.md` (Codex-Nutzer ohne Context).
+- WARN: Codex-Config vorhanden (`AGENTS.md`, `AGENTS.override.md` oder `.codex/AGENTS.md`), aber keine `CLAUDE.md`.
+- INFO: `CLAUDE.md` vorhanden, aber kein Codex-Config — Codex-Nutzer haben keinen Context.
 
 ### docs/ai vorhanden
 - **Stufe:** INFO
@@ -93,7 +93,7 @@ Alle Checks laufen rein lokal und deterministisch. Jeder Befund hat eine Stufe:
 | Skill-Qualität | WARN |
 | Skill-Überschneidung | WARN |
 | Redundanz | WARN |
-| AGENTS.md ↔ CLAUDE.md | WARN / INFO |
+| Codex ↔ CLAUDE.md | WARN / INFO |
 | docs/ai vorhanden | INFO |
 | Command-Frontmatter | WARN / INFO |
 | Agent-Frontmatter | WARN |

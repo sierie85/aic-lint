@@ -127,16 +127,19 @@ Parität mit `CLAUDE.md` — sinnvoll für Projekte, die beide Tools parallel nu
 
 ## Was wird geprüft
 
-| Quelle | Pfad |
+| Pfad | Beschreibung |
 |---|---|
-| Claude Code Memory | `CLAUDE.md` (rekursiv, alle Ebenen) |
-| Skills / Commands | `.claude/commands/*.md` |
-| Subagents | `.claude/agents/*.md` |
-| Settings | `.claude/settings.json`, `.claude/settings.local.json` |
-| MCP-Server | `.mcp.json` |
-| Codex CLI | `AGENTS.md` |
-| Gemini CLI | `GEMINI.md` |
-| Tool-agnostische Docs | `docs/ai/*.md` |
+| `CLAUDE.md` (rekursiv) | Projekt-Kontext für Claude Code |
+| `.claude/commands/*.md` | Slash-Commands / Skills |
+| `.claude/agents/*.md` | Subagents |
+| `.claude/settings.json` | Claude Code Projekt-Settings |
+| `.claude/settings.local.json` | Lokale Overrides |
+| `.mcp.json` | MCP-Server-Konfiguration |
+| `AGENTS.md` | Projekt-Kontext für Codex CLI |
+| `AGENTS.override.md` | Codex CLI Override-Datei |
+| `.codex/AGENTS.md` | Projektspezifische Codex-Anweisungen |
+| `GEMINI.md` | Projekt-Kontext für Gemini CLI |
+| `docs/ai/*.md` | Tool-agnostische AI-Dokumentation |
 
 Die vollständige Liste aller Checks steht in **[docs/checks.md](docs/checks.md)**.
 Konzept und Hintergrund: **[docs/overview.md](docs/overview.md)**.

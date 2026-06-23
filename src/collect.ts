@@ -49,6 +49,12 @@ export function collect(projectRoot: string): ProjectConfig {
   const agentsPath = join(root, "AGENTS.md")
   const agentsMd = existsSync(agentsPath) ? readConfigFile(agentsPath, root) : null
 
+  const agentsOverridePath = join(root, "AGENTS.override.md")
+  const agentsOverrideMd = existsSync(agentsOverridePath) ? readConfigFile(agentsOverridePath, root) : null
+
+  const codexAgentsPath = join(root, ".codex", "AGENTS.md")
+  const codexAgentsMd = existsSync(codexAgentsPath) ? readConfigFile(codexAgentsPath, root) : null
+
   const geminiPath = join(root, "GEMINI.md")
   const geminiMd = existsSync(geminiPath) ? readConfigFile(geminiPath, root) : null
 
@@ -62,5 +68,5 @@ export function collect(projectRoot: string): ProjectConfig {
     .filter((p) => existsSync(p))
     .map((p) => readConfigFile(p, root))
 
-  return { root, claudeMdFiles, skills, agents, agentsMd, geminiMd, aiDocs, jsonConfigs }
+  return { root, claudeMdFiles, skills, agents, agentsMd, agentsOverrideMd, codexAgentsMd, geminiMd, aiDocs, jsonConfigs }
 }

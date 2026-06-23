@@ -33,6 +33,8 @@ export function checkDeadRefs(config: ProjectConfig, fileExists: FileExists = ex
     ...config.skills,
     ...config.agents,
     ...(config.agentsMd ? [config.agentsMd] : []),
+    ...(config.agentsOverrideMd ? [config.agentsOverrideMd] : []),
+    ...(config.codexAgentsMd ? [config.codexAgentsMd] : []),
   ]
   for (const file of files) {
     for (const ref of extractFileRefs(file.content)) {
@@ -45,11 +47,12 @@ export function checkDeadRefs(config: ProjectConfig, fileExists: FileExists = ex
 }
 
 export function checkAgentsParity(config: ProjectConfig): Finding[] {
-  if (config.agentsMd && config.claudeMdFiles.length === 0) {
-    return [{ level: "WARN", message: "AGENTS.md vorhanden aber keine CLAUDE.md" }]
+  const hasCodexConfig = !!(config.agentsMd || config.agentsOverrideMd || config.codexAgentsMd)
+  if (hasCodexConfig && config.claudeMdFiles.length === 0) {
+    return [{ level: "WARN", message: "Codex-Config vorhanden (AGENTS.md / .codex/AGENTS.md) aber keine CLAUDE.md" }]
   }
-  if (config.claudeMdFiles.length > 0 && !config.agentsMd) {
-    return [{ level: "INFO", message: "Keine AGENTS.md — Codex-Nutzer haben keinen Context" }]
+  if (config.claudeMdFiles.length > 0 && !hasCodexConfig) {
+    return [{ level: "INFO", message: "Keine AGENTS.md oder .codex/AGENTS.md — Codex-Nutzer haben keinen Context" }]
   }
   return []
 }
@@ -185,6 +188,8 @@ export function checkSecrets(config: ProjectConfig): Finding[] {
     ...config.jsonConfigs,
     ...config.aiDocs,
     ...(config.agentsMd ? [config.agentsMd] : []),
+    ...(config.agentsOverrideMd ? [config.agentsOverrideMd] : []),
+    ...(config.codexAgentsMd ? [config.codexAgentsMd] : []),
     ...(config.geminiMd ? [config.geminiMd] : []),
   ]
   for (const file of files) {

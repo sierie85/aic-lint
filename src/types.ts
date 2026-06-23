@@ -11,6 +11,8 @@ export interface ProjectConfig {
   skills: ConfigFile[]
   agents: ConfigFile[]
   agentsMd: ConfigFile | null
+  agentsOverrideMd: ConfigFile | null
+  codexAgentsMd: ConfigFile | null
   geminiMd: ConfigFile | null
   aiDocs: ConfigFile[]
   jsonConfigs: ConfigFile[]
