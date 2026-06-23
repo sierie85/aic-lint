@@ -2,10 +2,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
   analyze,
-  checkAgentsParity,
-  checkAiDocs,
+  checkAiConfigPresence,
   checkClaudeMdLength,
-  checkClaudeMdPresence,
   checkClaudeMdStructure,
   checkDeadRefs,
   checkFrontmatter,
@@ -17,9 +15,11 @@ import {
 } from "./analyze.js"
 import { cf, lines, makeConfig } from "./testutil.js"
 
-test("checkClaudeMdPresence warns when none present", () => {
-  assert.equal(checkClaudeMdPresence(makeConfig()).length, 1)
-  assert.equal(checkClaudeMdPresence(makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "x")] })).length, 0)
+test("checkAiConfigPresence warns when no AI config files present", () => {
+  assert.equal(checkAiConfigPresence(makeConfig()).length, 1)
+  assert.equal(checkAiConfigPresence(makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "x")] })).length, 0)
+  assert.equal(checkAiConfigPresence(makeConfig({ agentsMd: cf("AGENTS.md", "x") })).length, 0)
+  assert.equal(checkAiConfigPresence(makeConfig({ geminiMd: cf("GEMINI.md", "x") })).length, 0)
 })
 
 test("checkClaudeMdLength: error above 150, warn above 80, ok below", () => {
@@ -43,34 +43,6 @@ test("checkDeadRefs also scans GEMINI.md and docs/ai", () => {
   })
   const findings = checkDeadRefs(config, () => false)
   assert.equal(findings.length, 2)
-})
-
-test("checkAgentsParity: AGENTS.md without CLAUDE.md warns", () => {
-  const findings = checkAgentsParity(makeConfig({ agentsMd: cf("AGENTS.md", "x") }))
-  assert.equal(findings[0].level, "WARN")
-})
-
-test("checkAgentsParity: .codex/AGENTS.md without CLAUDE.md warns", () => {
-  const findings = checkAgentsParity(makeConfig({ codexAgentsMd: cf(".codex/AGENTS.md", "x") }))
-  assert.equal(findings[0].level, "WARN")
-})
-
-test("checkAgentsParity: CLAUDE.md plus any Codex config gives no finding", () => {
-  const config = makeConfig({
-    claudeMdFiles: [cf("CLAUDE.md", "x")],
-    codexAgentsMd: cf(".codex/AGENTS.md", "x"),
-  })
-  assert.equal(checkAgentsParity(config).length, 0)
-})
-
-test("checkAgentsParity: CLAUDE.md without any Codex config gives info", () => {
-  const findings = checkAgentsParity(makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "x")] }))
-  assert.equal(findings[0].level, "INFO")
-})
-
-test("checkAiDocs gives info when no docs/ai present", () => {
-  assert.equal(checkAiDocs(makeConfig())[0].level, "INFO")
-  assert.equal(checkAiDocs(makeConfig({ aiDocs: [cf("docs/ai/x.md", "x")] })).length, 0)
 })
 
 test("checkClaudeMdStructure warns on long unstructured file, ignores short", () => {
@@ -153,6 +125,5 @@ test("analyze composes all checks in order", () => {
   const config = makeConfig({ claudeMdFiles: [cf("CLAUDE.md", lines(160))] })
   const findings = analyze(config, () => true)
   const levels = findings.map((f) => f.level)
-  assert.ok(levels.includes("ERROR")) // length
-  assert.ok(levels.includes("INFO")) // no AGENTS.md + no docs/ai
+  assert.ok(levels.includes("ERROR")) // length > 150
 })

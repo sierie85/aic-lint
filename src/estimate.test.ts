@@ -8,28 +8,27 @@ test("estimateTokens returns 0 for empty text", () => {
 })
 
 test("estimateTokens grows with text length", () => {
-  const short = estimateTokens("hallo welt")
-  const long = estimateTokens("hallo welt ".repeat(50))
+  const short = estimateTokens("hello world")
+  const long = estimateTokens("hello world ".repeat(50))
   assert.ok(long > short)
   assert.ok(short > 0)
 })
 
-test("buildContextBudget keys estimates per relPath and sums total", () => {
+test("buildContextBudget includes CLAUDE.md, skills and AGENTS.md", () => {
   const config = makeConfig({
-    claudeMdFiles: [cf("CLAUDE.md", "ein laengerer Text mit mehreren Woertern hier")],
-    skills: [cf("audit.md", "Skill Inhalt mit Text")],
+    claudeMdFiles: [cf("CLAUDE.md", "some content here with several words")],
+    skills: [cf("audit.md", "skill content here")],
+    agentsMd: cf("AGENTS.md", "codex instructions here"),
   })
   const budget = buildContextBudget(config)
-  assert.ok("CLAUDE.md" in budget.claudeMdFiles)
-  assert.ok("audit.md" in budget.skills)
-  const expected =
-    Object.values(budget.claudeMdFiles).reduce((a, b) => a + b, 0) +
-    Object.values(budget.skills).reduce((a, b) => a + b, 0)
-  assert.equal(budget.totalEstimatedTokens, expected)
+  assert.ok("CLAUDE.md" in budget.files)
+  assert.ok("audit.md" in budget.files)
+  assert.ok("AGENTS.md" in budget.files)
+  assert.equal(budget.totalEstimatedTokens, Object.values(budget.files).reduce((a, b) => a + b, 0))
 })
 
 test("buildContextBudget handles an empty project", () => {
   const budget = buildContextBudget(makeConfig())
-  assert.deepEqual(budget.claudeMdFiles, {})
+  assert.deepEqual(budget.files, {})
   assert.equal(budget.totalEstimatedTokens, 0)
 })

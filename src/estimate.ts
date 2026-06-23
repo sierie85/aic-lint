@@ -1,8 +1,5 @@
 import type { ContextBudget, ProjectConfig } from "./types.js"
-
-function sum(record: Record<string, number>): number {
-  return Object.values(record).reduce((a, b) => a + b, 0)
-}
+import { markdownFiles } from "./collect.js"
 
 // Rough local estimate — Anthropic does not publish an offline tokenizer
 // for Claude 3/4. Blend of a character- and word-based heuristic.
@@ -16,19 +13,10 @@ export function estimateTokens(text: string): number {
 }
 
 export function buildContextBudget(config: ProjectConfig): ContextBudget {
-  const claudeMdFiles: Record<string, number> = {}
-  for (const f of config.claudeMdFiles) {
-    claudeMdFiles[f.relPath] = estimateTokens(f.content)
+  const files: Record<string, number> = {}
+  for (const f of markdownFiles(config)) {
+    files[f.relPath] = estimateTokens(f.content)
   }
-
-  const skills: Record<string, number> = {}
-  for (const s of config.skills) {
-    skills[s.relPath] = estimateTokens(s.content)
-  }
-
-  return {
-    claudeMdFiles,
-    skills,
-    totalEstimatedTokens: sum(claudeMdFiles) + sum(skills),
-  }
+  const totalEstimatedTokens = Object.values(files).reduce((a, b) => a + b, 0)
+  return { files, totalEstimatedTokens }
 }

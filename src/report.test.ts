@@ -27,21 +27,25 @@ test("report omits sections that have no findings", () => {
   assert.doesNotMatch(out, /## Notices/)
 })
 
-test("report renders one budget row per CLAUDE.md and skill", () => {
+test("report renders budget rows by file path", () => {
   const budget: ContextBudget = {
-    claudeMdFiles: { "CLAUDE.md": 1000, "src/CLAUDE.md": 500 },
-    skills: { "audit.md": 200 },
+    files: { "CLAUDE.md": 1000, "AGENTS.md": 500, ".claude/commands/audit.md": 200 },
     totalEstimatedTokens: 1700,
   }
   const out = generateReport("/project", [], budget)
   assert.match(out, /## Context budget \(rough local estimate\)/)
-  assert.match(out, /\| CLAUDE\.md \(CLAUDE\.md\) \| 1,000 \|/)
-  assert.match(out, /\| CLAUDE\.md \(src\/CLAUDE\.md\) \| 500 \|/)
-  assert.match(out, /\| Skill: audit\.md \| 200 \|/)
+  assert.match(out, /\| CLAUDE\.md \| 1,000 \|/)
+  assert.match(out, /\| AGENTS\.md \| 500 \|/)
   assert.match(out, /\*\*Total\*\* \| \*\*1,700\*\*/)
+})
+
+test("report skips budget section when total is 0", () => {
+  const budget: ContextBudget = { files: {}, totalEstimatedTokens: 0 }
+  const out = generateReport("/project", [], budget)
+  assert.doesNotMatch(out, /Context budget/)
 })
 
 test("report has no budget table when budget is omitted", () => {
   const out = generateReport("/project", [])
-  assert.doesNotMatch(out, /Context-Budget/)
+  assert.doesNotMatch(out, /Context budget/)
 })

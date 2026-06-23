@@ -24,7 +24,6 @@ export interface Finding {
 }
 
 export interface ContextBudget {
-  claudeMdFiles: Record<string, number>
-  skills: Record<string, number>
+  files: Record<string, number>
   totalEstimatedTokens: number
 }

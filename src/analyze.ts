@@ -8,9 +8,15 @@ import { extractFileRefs, extractH2Headings, stripCodeFences } from "./markdown.
 
 export type FileExists = (absPath: string) => boolean
 
-export function checkClaudeMdPresence(config: ProjectConfig): Finding[] {
-  if (config.claudeMdFiles.length === 0) {
-    return [{ level: "WARN", message: "No CLAUDE.md found" }]
+export function checkAiConfigPresence(config: ProjectConfig): Finding[] {
+  const hasAny =
+    config.claudeMdFiles.length > 0 ||
+    config.agentsMd !== null ||
+    config.agentsOverrideMd !== null ||
+    config.codexAgentsMd !== null ||
+    config.geminiMd !== null
+  if (!hasAny) {
+    return [{ level: "WARN", message: "No AI config files found (CLAUDE.md, AGENTS.md, GEMINI.md)" }]
   }
   return []
 }
@@ -39,23 +45,6 @@ export function checkDeadRefs(config: ProjectConfig, fileExists: FileExists = ex
   return findings
 }
 
-export function checkAgentsParity(config: ProjectConfig): Finding[] {
-  const hasCodexConfig = !!(config.agentsMd || config.agentsOverrideMd || config.codexAgentsMd)
-  if (hasCodexConfig && config.claudeMdFiles.length === 0) {
-    return [{ level: "WARN", message: "Codex config present (AGENTS.md / .codex/AGENTS.md) but no CLAUDE.md" }]
-  }
-  if (config.claudeMdFiles.length > 0 && !hasCodexConfig) {
-    return [{ level: "INFO", message: "No AGENTS.md or .codex/AGENTS.md — Codex users have no context" }]
-  }
-  return []
-}
-
-export function checkAiDocs(config: ProjectConfig): Finding[] {
-  if (config.aiDocs.length === 0) {
-    return [{ level: "INFO", message: "No /docs/ai/ directory — tool-agnostic AI baseline missing" }]
-  }
-  return []
-}
 
 export function checkClaudeMdStructure(config: ProjectConfig): Finding[] {
   const findings: Finding[] = []
@@ -184,11 +173,9 @@ export function checkSecrets(config: ProjectConfig): Finding[] {
 
 export function analyze(config: ProjectConfig, fileExists: FileExists = existsSync): Finding[] {
   return [
-    ...checkClaudeMdPresence(config),
+    ...checkAiConfigPresence(config),
     ...checkClaudeMdLength(config),
     ...checkDeadRefs(config, fileExists),
-    ...checkAgentsParity(config),
-    ...checkAiDocs(config),
     ...checkClaudeMdStructure(config),
     ...checkSkillQuality(config),
     ...checkSkillOverlap(config),

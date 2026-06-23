@@ -46,7 +46,7 @@ test("toMarkdown renders the budget table from the result", () => {
   write("CLAUDE.md", "## A\n\ntext")
   const md = toMarkdown(runAudit(root))
   assert.match(md, /Context budget/)
-  assert.match(md, /\| CLAUDE\.md \(CLAUDE\.md\) \|/)
+  assert.match(md, /\| CLAUDE\.md \|/)
 })
 
 test("runAudit reports invalid JSON config as an error", () => {

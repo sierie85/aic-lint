@@ -5,9 +5,11 @@ All checks run purely locally and deterministically. Every finding has a level:
 
 ## Structure & quality
 
-### CLAUDE.md present
+### AI config present
 - **Level:** WARN
-- Warns when no `CLAUDE.md` is found in the project.
+- Warns when no AI config files are found at all — none of `CLAUDE.md`, `AGENTS.md`,
+  `AGENTS.override.md`, `.codex/AGENTS.md` or `GEMINI.md`. Having only one of them
+  is perfectly fine.
 
 ### CLAUDE.md length
 - **Level:** WARN (> 80 lines) · ERROR (> 150 lines)
@@ -41,17 +43,6 @@ All checks run purely locally and deterministically. Every finding has a level:
 - The same content line (≥ 40 characters, normalized) appears in multiple files
   at once — e.g. in `CLAUDE.md` *and* a skill. Headings, code blocks and short
   lines are excluded.
-
-## Multi-tool parity
-
-### Codex ↔ CLAUDE.md
-- **Level:** WARN / INFO
-- WARN: Codex config present (`AGENTS.md`, `AGENTS.override.md` or `.codex/AGENTS.md`), but no `CLAUDE.md`.
-- INFO: `CLAUDE.md` present, but no Codex config — Codex users have no context.
-
-### docs/ai present
-- **Level:** INFO
-- Recommends a tool-agnostic AI baseline under `docs/ai/`.
 
 ## Frontmatter
 
@@ -87,15 +78,13 @@ All checks run purely locally and deterministically. Every finding has a level:
 
 | Check | Level |
 |---|---|
-| CLAUDE.md present | WARN |
+| AI config present | WARN |
 | CLAUDE.md length | WARN / ERROR |
 | CLAUDE.md structure | WARN |
 | Dead references | ERROR |
 | Skill quality | WARN |
 | Skill overlap | WARN |
 | Redundancy | WARN |
-| Codex ↔ CLAUDE.md | WARN / INFO |
-| docs/ai present | INFO |
 | Command frontmatter | WARN / INFO |
 | Agent frontmatter | WARN |
 | JSON configs | ERROR |

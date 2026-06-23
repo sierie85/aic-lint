@@ -15,20 +15,15 @@ export function generateReport(
     "",
   ]
 
-  if (budget) {
+  if (budget && budget.totalEstimatedTokens > 0) {
     lines.push(
       "## Context budget (rough local estimate)",
       "",
-      "> Estimated without the Anthropic API — may differ from real token counts.",
-      "",
-      "| Layer | ~Tokens |",
+      "| File | ~Tokens |",
       "|---|---|",
     )
-    for (const [relPath, tokens] of Object.entries(budget.claudeMdFiles)) {
-      lines.push(`| CLAUDE.md (${relPath}) | ${fmt(tokens)} |`)
-    }
-    for (const [name, tokens] of Object.entries(budget.skills)) {
-      lines.push(`| Skill: ${name} | ${fmt(tokens)} |`)
+    for (const [relPath, tokens] of Object.entries(budget.files)) {
+      lines.push(`| ${relPath} | ${fmt(tokens)} |`)
     }
     lines.push(`| **Total** | **${fmt(budget.totalEstimatedTokens)}** |`, "")
   }
