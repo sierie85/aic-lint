@@ -4,15 +4,15 @@ export const FILE_EXTENSIONS = new Set([
   "rb", "java", "kt", "cs", "cpp", "c", "h", "lock", "sql",
 ])
 
-// http://, mailto:, tel:, file:, … sowie Anker (#...) sind keine Datei-Referenzen.
+// http://, mailto:, tel:, file:, … and anchors (#...) are not file references.
 function isExternalRef(ref: string): boolean {
   return /^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith("#")
 }
 
 export function extractFileRefs(text: string): string[] {
   const refs: string[] = []
-  // Inline-Code: nur pfadartige Tokens (mit "/") gelten als Referenz —
-  // ein blanker Dateiname wie `settings.json` ist meist nur eine Erwähnung.
+  // Inline code: only path-like tokens (containing "/") count as a reference —
+  // a bare filename like `settings.json` is usually just a mention.
   for (const m of text.matchAll(/`([^`\s]+)`/g)) {
     const c = m[1]
     if (isExternalRef(c) || /[*?]/.test(c) || !c.includes("/")) continue

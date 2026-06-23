@@ -4,8 +4,8 @@ function sum(record: Record<string, number>): number {
   return Object.values(record).reduce((a, b) => a + b, 0)
 }
 
-// Grobe lokale Schätzung — Anthropic veröffentlicht keinen Offline-Tokenizer
-// für Claude 3/4. Mischung aus Zeichen- und Wort-Heuristik.
+// Rough local estimate — Anthropic does not publish an offline tokenizer
+// for Claude 3/4. Blend of a character- and word-based heuristic.
 export function estimateTokens(text: string): number {
   if (text.length === 0) return 0
   const trimmed = text.trim()

@@ -72,8 +72,8 @@ export function collect(projectRoot: string): ProjectConfig {
   return { root, claudeMdFiles, skills, agents, agentsMd, agentsOverrideMd, codexAgentsMd, geminiMd, aiDocs, jsonConfigs }
 }
 
-// Alle Prosa-/Markdown-Dateien — relevant für Checks, die Inhalt parsen
-// (tote Referenzen, Redundanz). JSON-Configs sind hier bewusst ausgenommen.
+// All prose/Markdown files — relevant for checks that parse content
+// (dead references, redundancy). JSON configs are intentionally excluded here.
 export function markdownFiles(config: ProjectConfig): ConfigFile[] {
   return [
     ...config.claudeMdFiles,
@@ -84,8 +84,8 @@ export function markdownFiles(config: ProjectConfig): ConfigFile[] {
   ]
 }
 
-// Wirklich alle eingelesenen Dateien — relevant für den Secret-Scan,
-// der nichts auslassen darf.
+// Truly every file that was read — relevant for the secret scan,
+// which must not skip anything.
 export function allFiles(config: ProjectConfig): ConfigFile[] {
   return [...markdownFiles(config), ...config.jsonConfigs]
 }

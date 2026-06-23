@@ -6,25 +6,25 @@ import type { ContextBudget, Finding } from "./types.js"
 test("report renders header and 'no problems' when empty", () => {
   const out = generateReport("/project", [])
   assert.match(out, /# Audit Report — \/project/)
-  assert.match(out, /## Keine strukturellen Probleme gefunden/)
+  assert.match(out, /## No structural problems found/)
 })
 
 test("report groups findings into sections by level", () => {
   const findings: Finding[] = [
-    { level: "ERROR", message: "kaputt" },
-    { level: "WARN", message: "achtung" },
-    { level: "INFO", message: "hinweis" },
+    { level: "ERROR", message: "broken" },
+    { level: "WARN", message: "watch out" },
+    { level: "INFO", message: "note" },
   ]
   const out = generateReport("/project", findings)
-  assert.match(out, /## Fehler \(beheben vor nächster Session\)[\s\S]*❌ kaputt/)
-  assert.match(out, /## Warnungen[\s\S]*⚠️\s+achtung/)
-  assert.match(out, /## Hinweise[\s\S]*ℹ️\s+hinweis/)
+  assert.match(out, /## Errors \(fix before next session\)[\s\S]*❌ broken/)
+  assert.match(out, /## Warnings[\s\S]*⚠️\s+watch out/)
+  assert.match(out, /## Notices[\s\S]*ℹ️\s+note/)
 })
 
 test("report omits sections that have no findings", () => {
-  const out = generateReport("/project", [{ level: "WARN", message: "nur warnung" }])
-  assert.doesNotMatch(out, /## Fehler/)
-  assert.doesNotMatch(out, /## Hinweise/)
+  const out = generateReport("/project", [{ level: "WARN", message: "just a warning" }])
+  assert.doesNotMatch(out, /## Errors/)
+  assert.doesNotMatch(out, /## Notices/)
 })
 
 test("report renders one budget row per CLAUDE.md and skill", () => {
@@ -34,11 +34,11 @@ test("report renders one budget row per CLAUDE.md and skill", () => {
     totalEstimatedTokens: 1700,
   }
   const out = generateReport("/project", [], budget)
-  assert.match(out, /## Context-Budget \(grobe lokale Schätzung\)/)
-  assert.match(out, /\| CLAUDE\.md \(CLAUDE\.md\) \| 1\.000 \|/)
+  assert.match(out, /## Context budget \(rough local estimate\)/)
+  assert.match(out, /\| CLAUDE\.md \(CLAUDE\.md\) \| 1,000 \|/)
   assert.match(out, /\| CLAUDE\.md \(src\/CLAUDE\.md\) \| 500 \|/)
   assert.match(out, /\| Skill: audit\.md \| 200 \|/)
-  assert.match(out, /\*\*Gesamt\*\* \| \*\*1\.700\*\*/)
+  assert.match(out, /\*\*Total\*\* \| \*\*1,700\*\*/)
 })
 
 test("report has no budget table when budget is omitted", () => {

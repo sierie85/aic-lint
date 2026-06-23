@@ -26,5 +26,5 @@ export function makeConfig(overrides: Partial<ProjectConfig> = {}): ProjectConfi
 }
 
 export function lines(n: number): string {
-  return Array.from({ length: n }, (_, i) => `Zeile ${i + 1}`).join("\n")
+  return Array.from({ length: n }, (_, i) => `Line ${i + 1}`).join("\n")
 }

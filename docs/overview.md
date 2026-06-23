@@ -1,89 +1,89 @@
-# Produktbeschreibung: Claude Config Audit Tool
+# Product overview: aic-lint
 
-## Das Problem
+## The problem
 
-Claude-Code-Projekte sammeln mit der Zeit Konfiguration an: eine oder mehrere
-`CLAUDE.md`, eigene Slash-Commands unter `.claude/commands/`, Subagents,
-`settings.json`, MCP-Server, dazu `AGENTS.md`/`GEMINI.md` für gemischte Teams.
+AI-assistant projects accumulate configuration over time: one or more `CLAUDE.md`
+files, custom slash commands under `.claude/commands/`, subagents, `settings.json`,
+MCP servers, plus `AGENTS.md`/`GEMINI.md` for mixed-tool teams.
 
-Diese Dateien werden selten systematisch gepflegt. Typische Probleme:
+These files are rarely maintained systematically. Typical problems:
 
-- **Aufgeblähte `CLAUDE.md`** — wächst unkontrolliert, kostet bei jeder Session Context
-- **Redundanz** — dieselbe Anweisung steht in `CLAUDE.md` *und* in einem Skill
-- **Tote Referenzen** — Pfade zeigen auf Dateien, die längst umbenannt/gelöscht sind
-- **Schwache Skills** — Command ohne Beschreibung, Agent ohne Frontmatter
-- **Kaputte Configs** — `settings.json` mit Syntaxfehler bricht still
-- **Geleakte Secrets** — ein API-Key landet versehentlich in einer Config-Datei
+- **Bloated `CLAUDE.md`** — grows unchecked, costs context on every session
+- **Redundancy** — the same instruction lives in `CLAUDE.md` *and* in a skill
+- **Dead references** — paths point at files that were long since renamed/deleted
+- **Weak skills** — a command without a description, an agent without frontmatter
+- **Broken configs** — `settings.json` with a syntax error fails silently
+- **Leaked secrets** — an API key accidentally lands in a config file
 
-## Die Lösung
+## The solution
 
-Ein **lokaler, deterministischer Linter** speziell für die Claude-Konfiguration —
-gewissermaßen „ESLint für `.claude/`". Er liest alle relevanten Dateien ein, prüft
-sie gegen eine Reihe statischer Regeln und gibt einen priorisierten Report aus.
+A **local, deterministic linter** built specifically for AI-assistant configuration —
+essentially "ESLint for `.claude/` and friends". It reads all relevant files, checks
+them against a set of static rules and emits a prioritized report.
 
-## Designprinzipien
+## Design principles
 
-### 1. Komplett lokal, keine API
+### 1. Fully local, no API
 
-Das Tool macht **keinen einzigen Netzwerk-Call**. Es braucht weder einen
-Anthropic-API-Key noch ein Abo. Das hat zwei Gründe:
+The tool makes **zero network calls**. It needs neither an Anthropic API key nor a
+subscription. There are two reasons:
 
-- **Zugang** — der Anthropic-API ist ein separates, kostenpflichtiges Produkt;
-  ein Claude-Pro/Max-Abo schaltet ihn *nicht* frei.
-- **Determinismus** — gleiche Eingabe liefert immer dasselbe Ergebnis, ideal für CI.
+- **Access** — the Anthropic API is a separate, paid product; a Claude Pro/Max
+  subscription does *not* unlock it.
+- **Determinism** — the same input always yields the same result, ideal for CI.
 
-Der einzige Punkt, der früher den API brauchte (exaktes Token-Zählen), ist durch
-eine **lokale Schätzung** ersetzt (siehe „Context-Budget").
+The one thing that used to require the API (exact token counting) is replaced by a
+**local estimate** (see "Context budget").
 
-### 2. Null Runtime-Dependencies
+### 2. Zero runtime dependencies
 
-Außer `tsx`/`typescript` (Dev-Tooling) hat das Tool keine Abhängigkeiten. Selbst
-Frontmatter-Parsing und Secret-Scanning sind dependency-frei implementiert. Das
-hält das Tool klein, portabel und auditierbar.
+Apart from `tsx`/`typescript` (dev tooling), the tool has no dependencies. Even
+frontmatter parsing and secret scanning are implemented dependency-free. This keeps
+the tool small, portable and auditable.
 
-### 3. Severity-basierte Findings
+### 3. Severity-based findings
 
-Jeder Befund hat eine Stufe:
+Every finding has a level:
 
-- **ERROR** — sollte vor der nächsten Session behoben werden (führt zu Exit-Code 1)
-- **WARN** — Qualitätsproblem, sollte angeschaut werden
-- **INFO** — Hinweis / Empfehlung
+- **ERROR** — should be fixed before the next session (causes exit code 1)
+- **WARN** — quality issue, worth a look
+- **INFO** — hint / recommendation
 
-## Architektur
+## Architecture
 
-Eine schlanke Pipeline:
+A lean pipeline:
 
 ```
 collect  →  analyze  →  (estimate)  →  report
 ```
 
-| Schritt | Modul | Aufgabe |
+| Step | Module | Responsibility |
 |---|---|---|
-| collect | `collect.ts` | Alle Config-Dateien einlesen → `ProjectConfig` |
-| analyze | `analyze.ts` | Statische Checks ausführen → `Finding[]` |
-| estimate | `estimate.ts` | Lokale Token-Schätzung → `ContextBudget` |
-| report | `report.ts` | Markdown-Report rendern |
+| collect | `collect.ts` | Read all config files → `ProjectConfig` |
+| analyze | `analyze.ts` | Run static checks → `Finding[]` |
+| estimate | `estimate.ts` | Local token estimate → `ContextBudget` |
+| report | `report.ts` | Render the Markdown report |
 
-`audit.ts` orchestriert die Schritte und liefert ein strukturiertes `AuditResult`,
-das `index.ts` dann als Markdown oder JSON ausgibt.
+`audit.ts` orchestrates the steps and returns a structured `AuditResult`, which
+`index.ts` then emits as Markdown or JSON.
 
-## Context-Budget (lokale Schätzung)
+## Context budget (local estimate)
 
-Anthropic veröffentlicht keinen Offline-Tokenizer für Claude 3/4 — exakte
-Token-Zahlen sind ohne API nicht möglich. Das Tool schätzt daher das Context-Budget
-über eine Heuristik (Mischung aus Zeichen- und Wortzahl). Die Zahlen sind als
-**Schätzung** markiert und eignen sich vor allem für den *relativen* Vergleich
-(„welche Datei ist die schwerste?"), nicht als exakte Abrechnungsgrundlage.
+Anthropic does not publish an offline tokenizer for Claude 3/4 — exact token counts
+are impossible without the API. The tool therefore estimates the context budget via a
+heuristic (a blend of character and word counts). The numbers are marked as an
+**estimate** and are best suited for *relative* comparison ("which file is the
+heaviest?"), not as an exact billing basis.
 
-## Nutzungsformen
+## Usage modes
 
-- **CLI** — direkt im Terminal, Markdown oder `--json`
-- **`/audit`-Skill** — innerhalb von Claude Code
-- **CI-Gate** — via Exit-Code und `--json`
+- **CLI** — straight in the terminal, Markdown or `--json`
+- **`/audit` skill** — inside Claude Code
+- **CI gate** — via exit code and `--json`
 
-## Abgrenzung
+## Scope
 
-Das Tool ersetzt **kein** LLM-Review. Es prüft, was sich statisch und zuverlässig
-prüfen lässt. Inhaltliche Bewertung („ist diese Anweisung sinnvoll formuliert?")
-bleibt bewusst außen vor, weil das einen API-Call erfordern würde — und genau das
-ist hier ein Nicht-Ziel.
+The tool is **not** a replacement for an LLM review. It checks what can be verified
+statically and reliably. Content evaluation ("is this instruction well phrased?")
+is deliberately out of scope, because that would require an API call — and that is
+explicitly a non-goal here.

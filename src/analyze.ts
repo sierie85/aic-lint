@@ -10,7 +10,7 @@ export type FileExists = (absPath: string) => boolean
 
 export function checkClaudeMdPresence(config: ProjectConfig): Finding[] {
   if (config.claudeMdFiles.length === 0) {
-    return [{ level: "WARN", message: "Keine CLAUDE.md gefunden" }]
+    return [{ level: "WARN", message: "No CLAUDE.md found" }]
   }
   return []
 }
@@ -19,9 +19,9 @@ export function checkClaudeMdLength(config: ProjectConfig): Finding[] {
   const findings: Finding[] = []
   for (const f of config.claudeMdFiles) {
     if (f.lineCount > 150) {
-      findings.push({ level: "ERROR", message: `${f.relPath}: ${f.lineCount} Zeilen (empfohlen: < 80)` })
+      findings.push({ level: "ERROR", message: `${f.relPath}: ${f.lineCount} lines (recommended: < 80)` })
     } else if (f.lineCount > 80) {
-      findings.push({ level: "WARN", message: `${f.relPath}: ${f.lineCount} Zeilen (empfohlen: < 80)` })
+      findings.push({ level: "WARN", message: `${f.relPath}: ${f.lineCount} lines (recommended: < 80)` })
     }
   }
   return findings
@@ -32,7 +32,7 @@ export function checkDeadRefs(config: ProjectConfig, fileExists: FileExists = ex
   for (const file of markdownFiles(config)) {
     for (const ref of extractFileRefs(file.content)) {
       if (!fileExists(join(config.root, ref))) {
-        findings.push({ level: "ERROR", message: `Toter Pfad in ${file.relPath}: \`${ref}\`` })
+        findings.push({ level: "ERROR", message: `Dead path in ${file.relPath}: \`${ref}\`` })
       }
     }
   }
@@ -42,17 +42,17 @@ export function checkDeadRefs(config: ProjectConfig, fileExists: FileExists = ex
 export function checkAgentsParity(config: ProjectConfig): Finding[] {
   const hasCodexConfig = !!(config.agentsMd || config.agentsOverrideMd || config.codexAgentsMd)
   if (hasCodexConfig && config.claudeMdFiles.length === 0) {
-    return [{ level: "WARN", message: "Codex-Config vorhanden (AGENTS.md / .codex/AGENTS.md) aber keine CLAUDE.md" }]
+    return [{ level: "WARN", message: "Codex config present (AGENTS.md / .codex/AGENTS.md) but no CLAUDE.md" }]
   }
   if (config.claudeMdFiles.length > 0 && !hasCodexConfig) {
-    return [{ level: "INFO", message: "Keine AGENTS.md oder .codex/AGENTS.md — Codex-Nutzer haben keinen Context" }]
+    return [{ level: "INFO", message: "No AGENTS.md or .codex/AGENTS.md — Codex users have no context" }]
   }
   return []
 }
 
 export function checkAiDocs(config: ProjectConfig): Finding[] {
   if (config.aiDocs.length === 0) {
-    return [{ level: "INFO", message: "Kein /docs/ai/ Verzeichnis — tool-agnostische AI-Basis fehlt" }]
+    return [{ level: "INFO", message: "No /docs/ai/ directory — tool-agnostic AI baseline missing" }]
   }
   return []
 }
@@ -61,7 +61,7 @@ export function checkClaudeMdStructure(config: ProjectConfig): Finding[] {
   const findings: Finding[] = []
   for (const f of config.claudeMdFiles) {
     if (f.lineCount > 20 && !/^## /m.test(f.content)) {
-      findings.push({ level: "WARN", message: `${f.relPath}: unstrukturierter Inhalt (kein ## Abschnitt)` })
+      findings.push({ level: "WARN", message: `${f.relPath}: unstructured content (no ## section)` })
     }
   }
   return findings
@@ -74,7 +74,7 @@ export function checkSkillQuality(config: ProjectConfig): Finding[] {
     const prose = stripCodeFences(skill.content).replace(/`[^`]+`/g, "")
     const proseLines = prose.split("\n").filter((l) => l.trim() && !l.startsWith("#"))
     if (skill.lineCount > 10 && (!hasH1 || proseLines.length < 2)) {
-      findings.push({ level: "WARN", message: `Skill ${skill.relPath}: kein Titel oder kein beschreibender Text` })
+      findings.push({ level: "WARN", message: `Skill ${skill.relPath}: no title or no descriptive text` })
     }
   }
   return findings
@@ -90,7 +90,7 @@ export function checkSkillOverlap(config: ProjectConfig): Finding[] {
         const sections = shared.sort().map((h) => `"${h}"`).join(", ")
         findings.push({
           level: "WARN",
-          message: `Skill-Overlap: ${config.skills[i].relPath} + ${config.skills[j].relPath} teilen: ${sections}`,
+          message: `Skill overlap: ${config.skills[i].relPath} + ${config.skills[j].relPath} share: ${sections}`,
         })
       }
     }
@@ -122,7 +122,7 @@ export function checkRedundancy(config: ProjectConfig): Finding[] {
     if (paths.size >= 2) {
       const where = [...paths].sort().join(" + ")
       const preview = norm.length > 60 ? `${norm.slice(0, 60)}…` : norm
-      findings.push({ level: "WARN", message: `Redundanz in ${where}: "${preview}"` })
+      findings.push({ level: "WARN", message: `Redundancy in ${where}: "${preview}"` })
     }
   }
   return findings
@@ -134,25 +134,25 @@ export function checkFrontmatter(config: ProjectConfig): Finding[] {
   for (const s of config.skills) {
     const fm = parseFrontmatter(s.content)
     if (fm.present && !fm.valid) {
-      findings.push({ level: "WARN", message: `${s.relPath}: Frontmatter nicht geschlossen (--- fehlt)` })
+      findings.push({ level: "WARN", message: `${s.relPath}: frontmatter not closed (--- missing)` })
     } else if (fm.present && fm.valid && !fm.fields.description) {
-      findings.push({ level: "INFO", message: `${s.relPath}: Frontmatter ohne 'description'` })
+      findings.push({ level: "INFO", message: `${s.relPath}: frontmatter without 'description'` })
     }
   }
 
   for (const a of config.agents) {
     const fm = parseFrontmatter(a.content)
     if (!fm.present) {
-      findings.push({ level: "WARN", message: `${a.relPath}: Agent ohne Frontmatter (name/description erforderlich)` })
+      findings.push({ level: "WARN", message: `${a.relPath}: agent without frontmatter (name/description required)` })
       continue
     }
     if (!fm.valid) {
-      findings.push({ level: "WARN", message: `${a.relPath}: Frontmatter nicht geschlossen (--- fehlt)` })
+      findings.push({ level: "WARN", message: `${a.relPath}: frontmatter not closed (--- missing)` })
       continue
     }
     for (const key of ["name", "description"]) {
       if (!fm.fields[key]) {
-        findings.push({ level: "WARN", message: `${a.relPath}: Agent-Frontmatter ohne '${key}'` })
+        findings.push({ level: "WARN", message: `${a.relPath}: agent frontmatter without '${key}'` })
       }
     }
   }
@@ -166,7 +166,7 @@ export function checkJsonConfigs(config: ProjectConfig): Finding[] {
     try {
       JSON.parse(f.content)
     } catch (e) {
-      findings.push({ level: "ERROR", message: `${f.relPath}: ungültiges JSON (${(e as Error).message})` })
+      findings.push({ level: "ERROR", message: `${f.relPath}: invalid JSON (${(e as Error).message})` })
     }
   }
   return findings
@@ -176,7 +176,7 @@ export function checkSecrets(config: ProjectConfig): Finding[] {
   const findings: Finding[] = []
   for (const file of allFiles(config)) {
     for (const m of scanSecrets(file.content)) {
-      findings.push({ level: "ERROR", message: `Mögliches Secret in ${file.relPath}: ${m.kind} (${m.snippet})` })
+      findings.push({ level: "ERROR", message: `Possible secret in ${file.relPath}: ${m.kind} (${m.snippet})` })
     }
   }
   return findings

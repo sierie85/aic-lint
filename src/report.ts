@@ -1,7 +1,7 @@
 import type { ContextBudget, Finding } from "./types.js"
 
 function fmt(n: number): string {
-  return n.toLocaleString("de-DE")
+  return n.toLocaleString("en-US")
 }
 
 export function generateReport(
@@ -11,15 +11,15 @@ export function generateReport(
 ): string {
   const lines: string[] = [
     `# Audit Report — ${root}`,
-    `Erstellt: ${new Date().toISOString().slice(0, 10)}`,
+    `Generated: ${new Date().toISOString().slice(0, 10)}`,
     "",
   ]
 
   if (budget) {
     lines.push(
-      "## Context-Budget (grobe lokale Schätzung)",
+      "## Context budget (rough local estimate)",
       "",
-      "> Geschätzt ohne Anthropic-API — Abweichung von echten Tokens möglich.",
+      "> Estimated without the Anthropic API — may differ from real token counts.",
       "",
       "| Layer | ~Tokens |",
       "|---|---|",
@@ -30,7 +30,7 @@ export function generateReport(
     for (const [name, tokens] of Object.entries(budget.skills)) {
       lines.push(`| Skill: ${name} | ${fmt(tokens)} |`)
     }
-    lines.push(`| **Gesamt** | **${fmt(budget.totalEstimatedTokens)}** |`, "")
+    lines.push(`| **Total** | **${fmt(budget.totalEstimatedTokens)}** |`, "")
   }
 
   const errors = findings.filter((f) => f.level === "ERROR")
@@ -38,22 +38,22 @@ export function generateReport(
   const infos = findings.filter((f) => f.level === "INFO")
 
   if (errors.length > 0) {
-    lines.push("## Fehler (beheben vor nächster Session)", "")
+    lines.push("## Errors (fix before next session)", "")
     for (const f of errors) lines.push(`- ❌ ${f.message}`)
     lines.push("")
   }
   if (warns.length > 0) {
-    lines.push("## Warnungen", "")
+    lines.push("## Warnings", "")
     for (const f of warns) lines.push(`- ⚠️  ${f.message}`)
     lines.push("")
   }
   if (infos.length > 0) {
-    lines.push("## Hinweise", "")
+    lines.push("## Notices", "")
     for (const f of infos) lines.push(`- ℹ️  ${f.message}`)
     lines.push("")
   }
   if (findings.length === 0) {
-    lines.push("## Keine strukturellen Probleme gefunden", "")
+    lines.push("## No structural problems found", "")
   }
 
   return lines.join("\n")

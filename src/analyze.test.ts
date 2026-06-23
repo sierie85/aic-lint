@@ -29,7 +29,7 @@ test("checkClaudeMdLength: error above 150, warn above 80, ok below", () => {
 })
 
 test("checkDeadRefs flags refs that do not exist (injected fileExists)", () => {
-  const config = makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "siehe `src/missing.ts` und `src/here.ts`")] })
+  const config = makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "see `src/missing.ts` and `src/here.ts`")] })
   const exists = (p: string) => p.endsWith("here.ts")
   const findings = checkDeadRefs(config, exists)
   assert.equal(findings.length, 1)
@@ -38,8 +38,8 @@ test("checkDeadRefs flags refs that do not exist (injected fileExists)", () => {
 
 test("checkDeadRefs also scans GEMINI.md and docs/ai", () => {
   const config = makeConfig({
-    geminiMd: cf("GEMINI.md", "siehe `src/gone.ts`"),
-    aiDocs: [cf("docs/ai/x.md", "siehe `docs/missing.md`")],
+    geminiMd: cf("GEMINI.md", "see `src/gone.ts`"),
+    aiDocs: [cf("docs/ai/x.md", "see `docs/missing.md`")],
   })
   const findings = checkDeadRefs(config, () => false)
   assert.equal(findings.length, 2)
@@ -80,30 +80,30 @@ test("checkClaudeMdStructure warns on long unstructured file, ignores short", ()
 })
 
 test("checkSkillQuality warns on skill without prose, accepts well-formed skill", () => {
-  const bad = cf("s.md", "# Titel\n" + "```\ncode\n```\n".repeat(5))
+  const bad = cf("s.md", "# Title\n" + "```\ncode\n```\n".repeat(5))
   assert.equal(checkSkillQuality(makeConfig({ skills: [bad] })).length, 1)
-  const good = cf("s.md", "# Titel\n\nDies ist ein Skill.\nEr macht etwas Nuetzliches.\n" + lines(8))
+  const good = cf("s.md", "# Title\n\nThis is a skill.\nIt does something useful.\n" + lines(8))
   assert.equal(checkSkillQuality(makeConfig({ skills: [good] })).length, 0)
 })
 
 test("checkSkillOverlap warns when two skills share >=2 h2 headings", () => {
-  const a = cf("a.md", "## Verwendung\n## Beispiel\n## Nur A")
-  const b = cf("b.md", "## Verwendung\n## Beispiel\n## Nur B")
+  const a = cf("a.md", "## Usage\n## Example\n## Only A")
+  const b = cf("b.md", "## Usage\n## Example\n## Only B")
   const findings = checkSkillOverlap(makeConfig({ skills: [a, b] }))
   assert.equal(findings.length, 1)
-  assert.match(findings[0].message, /"Beispiel", "Verwendung"/)
+  assert.match(findings[0].message, /"Example", "Usage"/)
 })
 
 test("checkSkillOverlap ignores a single shared heading", () => {
-  const a = cf("a.md", "## Verwendung\n## Nur A")
-  const b = cf("b.md", "## Verwendung\n## Nur B")
+  const a = cf("a.md", "## Usage\n## Only A")
+  const b = cf("b.md", "## Usage\n## Only B")
   assert.equal(checkSkillOverlap(makeConfig({ skills: [a, b] })).length, 0)
 })
 
 test("checkRedundancy flags a long line shared across two files", () => {
-  const shared = "Dies ist eine ausreichend lange gemeinsame Zeile zum Testen."
+  const shared = "This is a sufficiently long shared line used for testing."
   const config = makeConfig({
-    claudeMdFiles: [cf("CLAUDE.md", `# Titel\n${shared}`)],
+    claudeMdFiles: [cf("CLAUDE.md", `# Title\n${shared}`)],
     skills: [cf("s.md", `# Skill\n${shared}`)],
   })
   const findings = checkRedundancy(config)
@@ -113,16 +113,16 @@ test("checkRedundancy flags a long line shared across two files", () => {
 
 test("checkRedundancy ignores short lines and code fences", () => {
   const config = makeConfig({
-    claudeMdFiles: [cf("CLAUDE.md", "kurz\n```\nidentischer code block hier drin lang genug\n```")],
-    skills: [cf("s.md", "kurz\n```\nidentischer code block hier drin lang genug\n```")],
+    claudeMdFiles: [cf("CLAUDE.md", "short\n```\nidentical code block long enough in here\n```")],
+    skills: [cf("s.md", "short\n```\nidentical code block long enough in here\n```")],
   })
   assert.equal(checkRedundancy(config).length, 0)
 })
 
 test("checkFrontmatter: agent without frontmatter warns, complete agent passes", () => {
-  const bad = cf("a.md", "# Agent\nnur prosa")
+  const bad = cf("a.md", "# Agent\njust prose")
   assert.equal(checkFrontmatter(makeConfig({ agents: [bad] }))[0].level, "WARN")
-  const good = cf("a.md", "---\nname: helper\ndescription: hilft\n---\n# Agent")
+  const good = cf("a.md", "---\nname: helper\ndescription: helps\n---\n# Agent")
   assert.equal(checkFrontmatter(makeConfig({ agents: [good] })).length, 0)
 })
 

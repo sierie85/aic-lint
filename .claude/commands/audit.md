@@ -1,48 +1,49 @@
-# /audit — Claude Config Audit
+# /audit — AI Config Audit
 
-Führt einen vollständigen, **lokalen** Audit der Claude-Konfigurationsdateien im aktuellen Projekt durch. Kein API-Zugriff, kein Netzwerk, kein API-Key nötig.
+Runs a full, **local** audit of the AI-assistant config files in the current
+project. No API access, no network, no API key required.
 
-## Verwendung
+## Usage
 
 ```
 /audit [--no-budget] [--json]
 ```
 
-- Ohne Flags: alle Checks + Context-Budget (lokale Schätzung)
-- `--no-budget`: Context-Budget-Tabelle weglassen
-- `--json`: Maschinen-lesbarer JSON-Output (für CI)
+- No flags: all checks + context budget (local estimate)
+- `--no-budget`: omit the context-budget table
+- `--json`: machine-readable JSON output (for CI)
 
-## Was wird geprüft
+## What gets checked
 
-- **CLAUDE.md** — Zeilenlänge, Struktur (##-Abschnitte), tote Pfadreferenzen
-- **Skills** (`.claude/commands/*.md`) — H1-Titel, beschreibender Text, Überschneidungen, Frontmatter
-- **Agents** (`.claude/agents/*.md`) — Frontmatter (name/description)
-- **JSON-Configs** (`settings.json`, `settings.local.json`, `.mcp.json`) — valides JSON
-- **AGENTS.md / GEMINI.md** — Vorhandensein, Konsistenz mit CLAUDE.md
-- **/docs/ai/** — tool-agnostische AI-Basis vorhanden?
-- **Redundanz** — gleiche Inhalte in CLAUDE.md und Skills (lokal, kein LLM)
-- **Secret-Scan** — versehentlich eingecheckte API-Keys/Tokens
-- **Context-Budget** — grobe lokale Token-Schätzung pro Datei
+- **CLAUDE.md** — line length, structure (## sections), dead path references
+- **Skills** (`.claude/commands/*.md`) — H1 title, descriptive text, overlap, frontmatter
+- **Agents** (`.claude/agents/*.md`) — frontmatter (name/description)
+- **JSON configs** (`settings.json`, `settings.local.json`, `.mcp.json`) — valid JSON
+- **AGENTS.md / GEMINI.md** — presence, consistency with CLAUDE.md
+- **/docs/ai/** — tool-agnostic AI baseline present?
+- **Redundancy** — same content in CLAUDE.md and skills (local, no LLM)
+- **Secret scan** — accidentally committed API keys/tokens
+- **Context budget** — rough local token estimate per file
 
-## Ausführung
+## Execution
 
 ```bash
 cd /workspace/repos/audit_tool && npx tsx src/index.ts "$CLAUDE_PROJECT_ROOT"
 ```
 
-Schnell ohne Budget-Tabelle:
+Quick run without the budget table:
 
 ```bash
 cd /workspace/repos/audit_tool && npx tsx src/index.ts "$CLAUDE_PROJECT_ROOT" --no-budget
 ```
 
-JSON für CI:
+JSON for CI:
 
 ```bash
 cd /workspace/repos/audit_tool && npx tsx src/index.ts "$CLAUDE_PROJECT_ROOT" --json
 ```
 
-## Exit-Code
+## Exit code
 
-- `0` — Keine Fehler (Warnungen möglich)
-- `1` — Mindestens ein ERROR gefunden
+- `0` — no errors (warnings possible)
+- `1` — at least one ERROR found

@@ -1,102 +1,102 @@
-# Check-Referenz
+# Check reference
 
-Alle Checks laufen rein lokal und deterministisch. Jeder Befund hat eine Stufe:
-**ERROR** (Exit-Code 1), **WARN** oder **INFO**.
+All checks run purely locally and deterministically. Every finding has a level:
+**ERROR** (exit code 1), **WARN** or **INFO**.
 
-## Struktur & Qualität
+## Structure & quality
 
-### CLAUDE.md vorhanden
-- **Stufe:** WARN
-- Warnt, wenn im Projekt keine `CLAUDE.md` gefunden wird.
+### CLAUDE.md present
+- **Level:** WARN
+- Warns when no `CLAUDE.md` is found in the project.
 
-### CLAUDE.md-Länge
-- **Stufe:** WARN (> 80 Zeilen) · ERROR (> 150 Zeilen)
-- Lange `CLAUDE.md` kostet bei jeder Session Context. Empfehlung: < 80 Zeilen.
+### CLAUDE.md length
+- **Level:** WARN (> 80 lines) · ERROR (> 150 lines)
+- A long `CLAUDE.md` costs context on every session. Recommendation: < 80 lines.
 
-### CLAUDE.md-Struktur
-- **Stufe:** WARN
-- Eine `CLAUDE.md` mit > 20 Zeilen ohne einen einzigen `##`-Abschnitt gilt als
-  unstrukturierter Fließtext.
+### CLAUDE.md structure
+- **Level:** WARN
+- A `CLAUDE.md` with > 20 lines and not a single `##` section counts as
+  unstructured prose.
 
-### Tote Referenzen
-- **Stufe:** ERROR
-- Pfadartige Datei-Referenzen in Backticks (mit `/`, z. B. `` `src/foo.ts` ``) oder
-  Markdown-Links, die im Projekt nicht existieren. Blanke Dateinamen
-  (`` `settings.json` ``), URLs, Anker (`#...`) und Globs werden ignoriert.
-- Geprüft in allen Markdown-Quellen: `CLAUDE.md`, Skills, Agents, `AGENTS.md`,
-  `AGENTS.override.md`, `.codex/AGENTS.md`, `GEMINI.md` und `docs/ai/*.md`.
+### Dead references
+- **Level:** ERROR
+- Path-like file references in backticks (containing `/`, e.g. `` `src/foo.ts` ``) or
+  Markdown links that do not exist in the project. Bare filenames
+  (`` `settings.json` ``), URLs, anchors (`#...`) and globs are ignored.
+- Checked in every Markdown source: `CLAUDE.md`, skills, agents, `AGENTS.md`,
+  `AGENTS.override.md`, `.codex/AGENTS.md`, `GEMINI.md` and `docs/ai/*.md`.
 
-### Skill-Qualität
-- **Stufe:** WARN
-- Ein Skill (> 10 Zeilen) ohne H1-Titel **oder** ohne beschreibenden Prosatext
-  (nur Code-Blöcke) ist für Claude schwer einzuordnen.
+### Skill quality
+- **Level:** WARN
+- A skill (> 10 lines) without an H1 title **or** without descriptive prose
+  (code blocks only) is hard for the assistant to place.
 
-### Skill-Überschneidung
-- **Stufe:** WARN
-- Zwei Skills, die **2 oder mehr identische `##`-Überschriften** teilen, decken
-  vermutlich dasselbe Thema ab.
+### Skill overlap
+- **Level:** WARN
+- Two skills that share **2 or more identical `##` headings** probably cover the
+  same topic.
 
-### Redundanz
-- **Stufe:** WARN
-- Dieselbe inhaltliche Zeile (≥ 40 Zeichen, normalisiert) steht in mehreren Dateien
-  gleichzeitig — z. B. in `CLAUDE.md` *und* einem Skill. Headings, Code-Blöcke und
-  kurze Zeilen werden ausgenommen.
+### Redundancy
+- **Level:** WARN
+- The same content line (≥ 40 characters, normalized) appears in multiple files
+  at once — e.g. in `CLAUDE.md` *and* a skill. Headings, code blocks and short
+  lines are excluded.
 
-## Multi-Tool-Parität
+## Multi-tool parity
 
 ### Codex ↔ CLAUDE.md
-- **Stufe:** WARN / INFO
-- WARN: Codex-Config vorhanden (`AGENTS.md`, `AGENTS.override.md` oder `.codex/AGENTS.md`), aber keine `CLAUDE.md`.
-- INFO: `CLAUDE.md` vorhanden, aber kein Codex-Config — Codex-Nutzer haben keinen Context.
+- **Level:** WARN / INFO
+- WARN: Codex config present (`AGENTS.md`, `AGENTS.override.md` or `.codex/AGENTS.md`), but no `CLAUDE.md`.
+- INFO: `CLAUDE.md` present, but no Codex config — Codex users have no context.
 
-### docs/ai vorhanden
-- **Stufe:** INFO
-- Empfiehlt eine tool-agnostische AI-Basis unter `docs/ai/`.
+### docs/ai present
+- **Level:** INFO
+- Recommends a tool-agnostic AI baseline under `docs/ai/`.
 
 ## Frontmatter
 
-### Command-Frontmatter
-- **Stufe:** WARN / INFO
-- WARN: Frontmatter-Block geöffnet, aber nicht mit `---` geschlossen.
-- INFO: gültiges Frontmatter ohne `description`.
+### Command frontmatter
+- **Level:** WARN / INFO
+- WARN: frontmatter block opened but not closed with `---`.
+- INFO: valid frontmatter without a `description`.
 
-### Agent-Frontmatter
-- **Stufe:** WARN
-- Warnt, wenn ein Agent (`.claude/agents/*.md`) **kein** Frontmatter hat, es nicht
-  geschlossen ist, oder die Felder `name` / `description` fehlen.
+### Agent frontmatter
+- **Level:** WARN
+- Warns when an agent (`.claude/agents/*.md`) has **no** frontmatter, it is not
+  closed, or the `name` / `description` fields are missing.
 
-## Config-Validität
+## Config validity
 
-### JSON-Configs
-- **Stufe:** ERROR
-- `.claude/settings.json`, `.claude/settings.local.json` und `.mcp.json` werden auf
-  gültiges JSON geprüft. Ein Syntaxfehler ist ein ERROR.
+### JSON configs
+- **Level:** ERROR
+- `.claude/settings.json`, `.claude/settings.local.json` and `.mcp.json` are checked
+  for valid JSON. A syntax error is an ERROR.
 
-## Sicherheit
+## Security
 
-### Secret-Scan
-- **Stufe:** ERROR
-- Durchsucht alle eingelesenen Dateien nach Mustern, die wie echte Geheimnisse
-  aussehen. Treffer werden in der Ausgabe **redacted** (z. B. `sk-a…yz`).
-- Erkannte Typen: Anthropic-, OpenAI-, AWS-, GitHub-, Slack-, Google-Keys sowie
-  Private-Key-Header (`-----BEGIN ... PRIVATE KEY-----`).
+### Secret scan
+- **Level:** ERROR
+- Scans all collected files for patterns that look like real secrets. Matches are
+  **redacted** in the output (e.g. `sk-a…yz`).
+- Detected types: Anthropic, OpenAI, AWS, GitHub, Slack, Google keys as well as
+  private-key headers (`-----BEGIN ... PRIVATE KEY-----`).
 
 ---
 
-## Übersicht
+## Summary
 
-| Check | Stufe |
+| Check | Level |
 |---|---|
-| CLAUDE.md vorhanden | WARN |
-| CLAUDE.md-Länge | WARN / ERROR |
-| CLAUDE.md-Struktur | WARN |
-| Tote Referenzen | ERROR |
-| Skill-Qualität | WARN |
-| Skill-Überschneidung | WARN |
-| Redundanz | WARN |
+| CLAUDE.md present | WARN |
+| CLAUDE.md length | WARN / ERROR |
+| CLAUDE.md structure | WARN |
+| Dead references | ERROR |
+| Skill quality | WARN |
+| Skill overlap | WARN |
+| Redundancy | WARN |
 | Codex ↔ CLAUDE.md | WARN / INFO |
-| docs/ai vorhanden | INFO |
-| Command-Frontmatter | WARN / INFO |
-| Agent-Frontmatter | WARN |
-| JSON-Configs | ERROR |
-| Secret-Scan | ERROR |
+| docs/ai present | INFO |
+| Command frontmatter | WARN / INFO |
+| Agent frontmatter | WARN |
+| JSON configs | ERROR |
+| Secret scan | ERROR |

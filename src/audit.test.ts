@@ -22,7 +22,7 @@ function write(relPath: string, content = "x") {
 }
 
 test("runAudit returns findings and hasErrors=false for a clean small project", () => {
-  write("CLAUDE.md", "## Setup\n\nKurz und strukturiert.")
+  write("CLAUDE.md", "## Setup\n\nShort and structured.")
   const result = runAudit(root, { noBudget: true })
   assert.equal(result.hasErrors, false)
   assert.ok(Array.isArray(result.findings))
@@ -30,7 +30,7 @@ test("runAudit returns findings and hasErrors=false for a clean small project", 
 })
 
 test("runAudit flags hasErrors=true when an oversized CLAUDE.md exists", () => {
-  const big = Array.from({ length: 200 }, (_, i) => `Zeile ${i}`).join("\n")
+  const big = Array.from({ length: 200 }, (_, i) => `Line ${i}`).join("\n")
   write("CLAUDE.md", big)
   assert.equal(runAudit(root, { noBudget: true }).hasErrors, true)
 })
@@ -45,7 +45,7 @@ test("runAudit includes a context budget by default", () => {
 test("toMarkdown renders the budget table from the result", () => {
   write("CLAUDE.md", "## A\n\ntext")
   const md = toMarkdown(runAudit(root))
-  assert.match(md, /Context-Budget/)
+  assert.match(md, /Context budget/)
   assert.match(md, /\| CLAUDE\.md \(CLAUDE\.md\) \|/)
 })
 
@@ -54,5 +54,5 @@ test("runAudit reports invalid JSON config as an error", () => {
   write(".claude/settings.json", "{ not valid json ")
   const result = runAudit(root, { noBudget: true })
   assert.equal(result.hasErrors, true)
-  assert.ok(result.findings.some((f) => /settings\.json.*ungültiges JSON/.test(f.message)))
+  assert.ok(result.findings.some((f) => /settings\.json.*invalid JSON/.test(f.message)))
 })
