@@ -25,14 +25,15 @@ Supports: **Claude Code**, **Codex CLI**, **Gemini CLI** and any tool built on
 
 Requirement: **Node.js ≥ 18**.
 
-### Option A — Standalone (recommended)
+### Option A — Global install (recommended)
 
-Clone once to a central location, then use it from any project:
+Clone once and install globally — then `aic-lint` is available in every project:
 
 ```bash
 git clone <repo-url> ~/.aic-lint
 cd ~/.aic-lint
 npm install
+npm install -g .
 ```
 
 ### Option B — As a git submodule inside an existing repo
@@ -40,7 +41,7 @@ npm install
 ```bash
 cd my-project
 git submodule add <repo-url> .aic-lint
-cd .aic-lint && npm install
+cd .aic-lint && npm install && npm install -g .
 ```
 
 ---
@@ -48,27 +49,30 @@ cd .aic-lint && npm install
 ## Usage (CLI)
 
 ```bash
-npx tsx ~/.aic-lint/src/index.ts <project-path> [--no-budget] [--json]
+aic-lint [project-path] [--no-budget] [--json]
 ```
 
 Examples:
 
 ```bash
 # Current directory (Markdown report)
-npx tsx ~/.aic-lint/src/index.ts .
+aic-lint .
+
+# A specific project
+aic-lint ../my-project
 
 # Without the context-budget table
-npx tsx ~/.aic-lint/src/index.ts . --no-budget
+aic-lint . --no-budget
 
 # Machine-readable (for CI)
-npx tsx ~/.aic-lint/src/index.ts . --json
+aic-lint . --json
 ```
 
 ### Flags
 
 | Flag | Effect |
 |---|---|
-| `<project-path>` | Root directory of the project to check (default: `.`) |
+| `[project-path]` | Root directory of the project to check (default: `.`) |
 | `--no-budget` | Omit the context-budget table |
 | `--json` | Output JSON instead of Markdown |
 
@@ -82,7 +86,7 @@ npx tsx ~/.aic-lint/src/index.ts . --json
 CI gate example:
 
 ```bash
-npx tsx ~/.aic-lint/src/index.ts . --json || echo "Audit failed"
+aic-lint . --json || echo "Audit failed"
 ```
 
 ---
@@ -104,11 +108,7 @@ Callable directly inside the tool repo itself:
 **Use the skill in another project:**
 
 1. Copy `.claude/commands/audit.md` into the target project's `.claude/commands/` directory.
-2. Adjust the path in the skill to point at your installation:
-
-   ```bash
-   npx tsx ~/.aic-lint/src/index.ts "$CLAUDE_PROJECT_ROOT"
-   ```
+2. The skill calls `aic-lint` directly — no path adjustment needed after a global install.
 
 3. `/audit` is now available in the target project.
 
@@ -117,7 +117,7 @@ Callable directly inside the tool repo itself:
 Run it straight from the terminal or as a shell command in the Codex context:
 
 ```bash
-npx tsx ~/.aic-lint/src/index.ts .
+aic-lint .
 ```
 
 The tool detects `AGENTS.md` (and `AGENTS.override.md` / `.codex/AGENTS.md`)

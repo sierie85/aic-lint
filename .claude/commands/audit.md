@@ -28,19 +28,19 @@ project. No API access, no network, no API key required.
 ## Execution
 
 ```bash
-cd /workspace/repos/audit_tool && npx tsx src/index.ts "$CLAUDE_PROJECT_ROOT"
+aic-lint "$CLAUDE_PROJECT_ROOT"
 ```
 
 Quick run without the budget table:
 
 ```bash
-cd /workspace/repos/audit_tool && npx tsx src/index.ts "$CLAUDE_PROJECT_ROOT" --no-budget
+aic-lint "$CLAUDE_PROJECT_ROOT" --no-budget
 ```
 
 JSON for CI:
 
 ```bash
-cd /workspace/repos/audit_tool && npx tsx src/index.ts "$CLAUDE_PROJECT_ROOT" --json
+aic-lint "$CLAUDE_PROJECT_ROOT" --json
 ```
 
 ## Exit code
