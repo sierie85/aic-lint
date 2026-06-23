@@ -3,39 +3,9 @@ import { join } from "path"
 import type { Finding, ProjectConfig } from "./types.js"
 import { parseFrontmatter } from "./frontmatter.js"
 import { scanSecrets } from "./secrets.js"
-
-export const FILE_EXTENSIONS = new Set([
-  "md", "py", "js", "ts", "tsx", "jsx", "json", "toml", "yaml", "yml",
-  "sh", "bash", "txt", "cfg", "ini", "env", "html", "css", "rs", "go",
-  "rb", "java", "kt", "cs", "cpp", "c", "h", "lock", "sql",
-])
+import { extractFileRefs, extractH2Headings, stripCodeFences } from "./markdown.js"
 
 export type FileExists = (absPath: string) => boolean
-
-export function extractFileRefs(text: string): string[] {
-  const refs: string[] = []
-  for (const m of text.matchAll(/`([^`\s]+)`/g)) {
-    const c = m[1]
-    if (c.startsWith("http") || c.startsWith("#") || /[*?]/.test(c)) continue
-    const ext = c.includes(".") ? c.split(".").pop()!.toLowerCase() : ""
-    if (FILE_EXTENSIONS.has(ext)) refs.push(c)
-  }
-  for (const m of text.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)) {
-    const c = m[2]
-    if (!c.startsWith("http") && !c.startsWith("#") && !/[*?]/.test(c)) refs.push(c)
-  }
-  return refs
-}
-
-export function extractH2Headings(text: string): Set<string> {
-  const headings = new Set<string>()
-  for (const m of text.matchAll(/^## (.+)$/gm)) headings.add(m[1].trim())
-  return headings
-}
-
-export function stripCodeFences(text: string): string {
-  return text.replace(/```[\s\S]*?```/g, "")
-}
 
 export function checkClaudeMdPresence(config: ProjectConfig): Finding[] {
   if (config.claudeMdFiles.length === 0) {
@@ -61,6 +31,7 @@ export function checkDeadRefs(config: ProjectConfig, fileExists: FileExists = ex
   const files = [
     ...config.claudeMdFiles,
     ...config.skills,
+    ...config.agents,
     ...(config.agentsMd ? [config.agentsMd] : []),
   ]
   for (const file of files) {

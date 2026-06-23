@@ -14,29 +14,8 @@ import {
   checkSecrets,
   checkSkillOverlap,
   checkSkillQuality,
-  extractFileRefs,
-  extractH2Headings,
-  stripCodeFences,
 } from "./analyze.js"
 import { cf, lines, makeConfig } from "./testutil.js"
-
-test("extractFileRefs picks up backtick paths and md links, skips urls/globs", () => {
-  const text = "Siehe `src/foo.ts` und [doc](docs/bar.md), nicht `https://x.com/a.ts` oder `src/*.ts`"
-  assert.deepEqual(extractFileRefs(text).sort(), ["docs/bar.md", "src/foo.ts"])
-})
-
-test("extractFileRefs ignores backtick words without a known extension", () => {
-  assert.deepEqual(extractFileRefs("benutze `npm install` und `someVar`"), [])
-})
-
-test("extractH2Headings returns trimmed h2 set", () => {
-  const set = extractH2Headings("# Titel\n## Eins \n### Drei\n## Zwei")
-  assert.deepEqual([...set].sort(), ["Eins", "Zwei"])
-})
-
-test("stripCodeFences removes fenced blocks", () => {
-  assert.equal(stripCodeFences("a\n```\ncode\n```\nb").trim(), "a\n\nb".trim())
-})
 
 test("checkClaudeMdPresence warns when none present", () => {
   assert.equal(checkClaudeMdPresence(makeConfig()).length, 1)

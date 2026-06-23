@@ -20,9 +20,10 @@ Alle Checks laufen rein lokal und deterministisch. Jeder Befund hat eine Stufe:
 
 ### Tote Referenzen
 - **Stufe:** ERROR
-- Datei-Pfade in Backticks (z. B. `` `src/foo.ts` ``) oder Markdown-Links, die im
-  Projekt nicht existieren. URLs, Anker (`#...`) und Globs werden ignoriert.
-- Geprüft in: `CLAUDE.md`, Skills, `AGENTS.md`.
+- Pfadartige Datei-Referenzen in Backticks (mit `/`, z. B. `` `src/foo.ts` ``) oder
+  Markdown-Links, die im Projekt nicht existieren. Blanke Dateinamen
+  (`` `settings.json` ``), URLs, Anker (`#...`) und Globs werden ignoriert.
+- Geprüft in: `CLAUDE.md`, Skills, Agents, `AGENTS.md`.
 
 ### Skill-Qualität
 - **Stufe:** WARN

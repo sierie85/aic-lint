@@ -12,12 +12,15 @@ function readConfigFile(absPath: string, root: string): ConfigFile {
   }
 }
 
+const IGNORED_DIRS = new Set(["node_modules", "dist", "build", "coverage", "vendor"])
+
 function findFiles(dir: string, name: string): string[] {
   const results: string[] = []
   if (!existsSync(dir)) return results
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const fullPath = join(dir, entry.name)
-    if (entry.isDirectory() && !entry.name.startsWith(".")) {
+    if (entry.isDirectory()) {
+      if (entry.name.startsWith(".") || IGNORED_DIRS.has(entry.name)) continue
       results.push(...findFiles(fullPath, name))
     } else if (entry.isFile() && entry.name === name) {
       results.push(fullPath)

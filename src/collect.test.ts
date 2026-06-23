@@ -49,6 +49,14 @@ test("collect detects AGENTS.md, GEMINI.md and docs/ai", () => {
   assert.equal(config.aiDocs.length, 1)
 })
 
+test("collect does not recurse into node_modules or dist", () => {
+  write("CLAUDE.md", "root")
+  write("node_modules/some-pkg/CLAUDE.md", "fremd")
+  write("dist/CLAUDE.md", "build-artefakt")
+  const config = collect(root)
+  assert.deepEqual(config.claudeMdFiles.map((f) => f.relPath), ["CLAUDE.md"])
+})
+
 test("collect reads agents and json config files", () => {
   write(".claude/agents/helper.md", "# helper")
   write(".claude/settings.json", "{}")
