@@ -1,10 +1,13 @@
-# Claude Config Audit Tool
+# aic-lint
 
-Ein **lokaler Linter für deine Claude-Konfiguration** — prüft `CLAUDE.md`, Skills,
-Agents und weitere Config-Dateien auf Qualität, Redundanz, tote Referenzen und
-versehentlich eingecheckte Secrets.
+Ein **lokaler Linter für AI-Coding-Assistant-Configs** — prüft `CLAUDE.md`, `AGENTS.md`,
+Skills, Subagents und weitere Config-Dateien auf Qualität, Redundanz, tote Referenzen
+und versehentlich eingecheckte Secrets.
 
-> 🔒 **Komplett lokal.** Kein Anthropic-API, kein Netzwerk, kein API-Key, kein Abo.
+Unterstützt: **Claude Code**, **Codex CLI**, **Gemini CLI** und alle Tools,
+die auf `CLAUDE.md`- oder `AGENTS.md`-Konventionen basieren.
+
+> **Komplett lokal.** Kein API-Key, kein Abo, kein Netzwerk.
 > Null Runtime-Dependencies — läuft überall, wo Node.js läuft.
 
 ---
@@ -14,7 +17,7 @@ versehentlich eingecheckte Secrets.
 - **Deterministisch** — keine LLM-Calls, gleiche Eingabe → gleiches Ergebnis
 - **Null Runtime-Dependencies** — nur `tsx` + `typescript` als Dev-Tools
 - **CI-tauglich** — `--json`-Output und sinnvolle Exit-Codes
-- **Als `/audit`-Skill** direkt in Claude Code nutzbar
+- **Multi-Tool** — erkennt `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `docs/ai/` und mehr
 
 ---
 
@@ -22,10 +25,22 @@ versehentlich eingecheckte Secrets.
 
 Voraussetzung: **Node.js ≥ 18**.
 
+### Option A — Standalone (empfohlen)
+
+Einmalig an einem zentralen Ort klonen, dann von jedem Projekt aus nutzbar:
+
 ```bash
-git clone <repo-url> audit_tool
-cd audit_tool
+git clone <repo-url> ~/.aic-lint
+cd ~/.aic-lint
 npm install
+```
+
+### Option B — Als Git-Submodule im bestehenden Repo
+
+```bash
+cd mein-projekt
+git submodule add <repo-url> .aic-lint
+cd .aic-lint && npm install
 ```
 
 ---
@@ -33,29 +48,20 @@ npm install
 ## Verwendung (CLI)
 
 ```bash
-npx tsx src/index.ts <projekt-pfad> [--no-budget] [--json]
+npx tsx ~/.aic-lint/src/index.ts <projekt-pfad> [--no-budget] [--json]
 ```
 
 Beispiele:
 
 ```bash
-# Aktuelles Verzeichnis auditieren (Markdown-Report)
-npx tsx src/index.ts .
-
-# Ein anderes Projekt prüfen
-npx tsx src/index.ts ../mein-projekt
+# Aktuelles Verzeichnis (Markdown-Report)
+npx tsx ~/.aic-lint/src/index.ts .
 
 # Ohne Context-Budget-Tabelle
-npx tsx src/index.ts . --no-budget
+npx tsx ~/.aic-lint/src/index.ts . --no-budget
 
 # Maschinen-lesbar (für CI)
-npx tsx src/index.ts . --json
-```
-
-Oder über das npm-Script:
-
-```bash
-npm run audit -- . --json
+npx tsx ~/.aic-lint/src/index.ts . --json
 ```
 
 ### Flags
@@ -73,95 +79,64 @@ npm run audit -- . --json
 | `0` | Keine Fehler (Warnungen/Hinweise möglich) |
 | `1` | Mindestens ein **ERROR** gefunden |
 
-So lässt sich das Tool in CI als Gate verwenden:
+CI-Gate-Beispiel:
 
 ```bash
-npx tsx src/index.ts . --json || echo "Audit fehlgeschlagen"
+npx tsx ~/.aic-lint/src/index.ts . --json || echo "Audit fehlgeschlagen"
 ```
 
 ---
 
-## Verwendung als `/audit`-Skill in Claude Code
+## Integration
+
+### Claude Code — `/audit`-Skill
 
 Das Repo bringt einen fertigen Slash-Command mit: `.claude/commands/audit.md`.
 
-### Im Tool-Repo selbst
-
-In Claude Code einfach eingeben:
+Im Tool-Repo selbst direkt aufrufbar:
 
 ```
 /audit
-```
-
-Der Skill ruft das CLI auf und gibt den Report aus. Varianten:
-
-```
 /audit --no-budget
 /audit --json
 ```
 
-### Skill in einem anderen Projekt nutzen
+**Skill in ein anderes Projekt übernehmen:**
 
-1. Kopiere `.claude/commands/audit.md` in das `.claude/commands/`-Verzeichnis
-   deines Zielprojekts.
-2. Passe im Skill den Pfad zum Tool an (die Zeile mit `npx tsx .../src/index.ts`),
-   z. B. auf den absoluten Pfad deiner Audit-Tool-Installation:
+1. `.claude/commands/audit.md` in das `.claude/commands/`-Verzeichnis des Zielprojekts kopieren.
+2. Den Pfad im Skill auf die eigene Installation anpassen:
 
    ```bash
-   npx tsx /pfad/zu/audit_tool/src/index.ts "$CLAUDE_PROJECT_ROOT"
+   npx tsx ~/.aic-lint/src/index.ts "$CLAUDE_PROJECT_ROOT"
    ```
 
-3. `/audit` steht dann im Zielprojekt zur Verfügung und prüft dessen Konfiguration.
+3. `/audit` steht jetzt im Zielprojekt zur Verfügung.
+
+### Codex CLI
+
+Direkt aus dem Terminal oder als Shell-Befehl im Codex-Kontext:
+
+```bash
+npx tsx ~/.aic-lint/src/index.ts .
+```
+
+Das Tool erkennt `AGENTS.md` automatisch und prüft sie auf Qualität, Struktur und
+Parität mit `CLAUDE.md` — sinnvoll für Projekte, die beide Tools parallel nutzen.
 
 ---
 
 ## Was wird geprüft
 
-Gesammelt und analysiert werden:
-
 | Quelle | Pfad |
 |---|---|
-| Projekt-Memory | `CLAUDE.md` (rekursiv, alle Ebenen) |
+| Claude Code Memory | `CLAUDE.md` (rekursiv, alle Ebenen) |
 | Skills / Commands | `.claude/commands/*.md` |
 | Subagents | `.claude/agents/*.md` |
 | Settings | `.claude/settings.json`, `.claude/settings.local.json` |
 | MCP-Server | `.mcp.json` |
-| Multi-Tool | `AGENTS.md`, `GEMINI.md` |
+| Codex CLI | `AGENTS.md` |
+| Gemini CLI | `GEMINI.md` |
 | Tool-agnostische Docs | `docs/ai/*.md` |
 
 Die vollständige Liste aller Checks steht in **[docs/checks.md](docs/checks.md)**.
 Konzept und Hintergrund: **[docs/overview.md](docs/overview.md)**.
-
----
-
-## Entwicklung
-
-```bash
-npm test         # Test-Suite (Node-eigener Test-Runner via tsx)
-npm run typecheck # tsc --noEmit
-```
-
-### Projektstruktur
-
-```
-src/
-  index.ts       Entry-Point: Argumente parsen, Format wählen, Exit-Code
-  audit.ts       Orchestrierung (collect → analyze → budget)
-  collect.ts     Config-Dateien einlesen → ProjectConfig
-  analyze.ts     Alle statischen Checks → Finding[]
-  estimate.ts    Lokale Token-Schätzung → ContextBudget
-  report.ts      Markdown-Report
-  frontmatter.ts YAML-Frontmatter-Parser (minimal, dependency-frei)
-  secrets.ts     Secret-Pattern-Scanner
-  types.ts       Gemeinsame Typen
-  *.test.ts      Tests (neben dem jeweiligen Modul)
-.claude/
-  commands/
-    audit.md     /audit-Skill
-docs/
-  overview.md    Produktbeschreibung & Konzept
-  checks.md      Referenz aller Checks
-```
-
-Die Logik ist über Dependency Injection testbar (`fileExists`, injizierbare
-Funktionen), sodass die Tests ohne echtes Dateisystem oder Netzwerk auskommen.
