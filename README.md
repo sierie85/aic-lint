@@ -1,33 +1,33 @@
 # aic-lint
 
-Ein **lokaler Linter für AI-Coding-Assistant-Configs** — prüft `CLAUDE.md`, `AGENTS.md`,
-Skills, Subagents und weitere Config-Dateien auf Qualität, Redundanz, tote Referenzen
-und versehentlich eingecheckte Secrets.
+A **local linter for AI coding-assistant configs** — checks `CLAUDE.md`, `AGENTS.md`,
+skills, subagents and other config files for quality, redundancy, dead references
+and accidentally committed secrets.
 
-Unterstützt: **Claude Code**, **Codex CLI**, **Gemini CLI** und alle Tools,
-die auf `CLAUDE.md`- oder `AGENTS.md`-Konventionen basieren.
+Supports: **Claude Code**, **Codex CLI**, **Gemini CLI** and any tool built on
+`CLAUDE.md` or `AGENTS.md` conventions.
 
-> **Komplett lokal.** Kein API-Key, kein Abo, kein Netzwerk.
-> Null Runtime-Dependencies — läuft überall, wo Node.js läuft.
+> **Fully local.** No API key, no subscription, no network.
+> Zero runtime dependencies — runs anywhere Node.js runs.
 
 ---
 
 ## Highlights
 
-- **Deterministisch** — keine LLM-Calls, gleiche Eingabe → gleiches Ergebnis
-- **Null Runtime-Dependencies** — nur `tsx` + `typescript` als Dev-Tools
-- **CI-tauglich** — `--json`-Output und sinnvolle Exit-Codes
-- **Multi-Tool** — erkennt `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `docs/ai/` und mehr
+- **Deterministic** — no LLM calls, same input → same result
+- **Zero runtime dependencies** — only `tsx` + `typescript` as dev tools
+- **CI-friendly** — `--json` output and meaningful exit codes
+- **Multi-tool** — detects `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `docs/ai/` and more
 
 ---
 
 ## Installation
 
-Voraussetzung: **Node.js ≥ 18**.
+Requirement: **Node.js ≥ 18**.
 
-### Option A — Standalone (empfohlen)
+### Option A — Standalone (recommended)
 
-Einmalig an einem zentralen Ort klonen, dann von jedem Projekt aus nutzbar:
+Clone once to a central location, then use it from any project:
 
 ```bash
 git clone <repo-url> ~/.aic-lint
@@ -35,65 +35,65 @@ cd ~/.aic-lint
 npm install
 ```
 
-### Option B — Als Git-Submodule im bestehenden Repo
+### Option B — As a git submodule inside an existing repo
 
 ```bash
-cd mein-projekt
+cd my-project
 git submodule add <repo-url> .aic-lint
 cd .aic-lint && npm install
 ```
 
 ---
 
-## Verwendung (CLI)
+## Usage (CLI)
 
 ```bash
-npx tsx ~/.aic-lint/src/index.ts <projekt-pfad> [--no-budget] [--json]
+npx tsx ~/.aic-lint/src/index.ts <project-path> [--no-budget] [--json]
 ```
 
-Beispiele:
+Examples:
 
 ```bash
-# Aktuelles Verzeichnis (Markdown-Report)
+# Current directory (Markdown report)
 npx tsx ~/.aic-lint/src/index.ts .
 
-# Ohne Context-Budget-Tabelle
+# Without the context-budget table
 npx tsx ~/.aic-lint/src/index.ts . --no-budget
 
-# Maschinen-lesbar (für CI)
+# Machine-readable (for CI)
 npx tsx ~/.aic-lint/src/index.ts . --json
 ```
 
 ### Flags
 
-| Flag | Wirkung |
+| Flag | Effect |
 |---|---|
-| `<projekt-pfad>` | Wurzelverzeichnis des zu prüfenden Projekts (Default: `.`) |
-| `--no-budget` | Context-Budget-Tabelle weglassen |
-| `--json` | JSON statt Markdown ausgeben |
+| `<project-path>` | Root directory of the project to check (default: `.`) |
+| `--no-budget` | Omit the context-budget table |
+| `--json` | Output JSON instead of Markdown |
 
-### Exit-Codes
+### Exit codes
 
-| Code | Bedeutung |
+| Code | Meaning |
 |---|---|
-| `0` | Keine Fehler (Warnungen/Hinweise möglich) |
-| `1` | Mindestens ein **ERROR** gefunden |
+| `0` | No errors (warnings/notices possible) |
+| `1` | At least one **ERROR** found |
 
-CI-Gate-Beispiel:
+CI gate example:
 
 ```bash
-npx tsx ~/.aic-lint/src/index.ts . --json || echo "Audit fehlgeschlagen"
+npx tsx ~/.aic-lint/src/index.ts . --json || echo "Audit failed"
 ```
 
 ---
 
 ## Integration
 
-### Claude Code — `/audit`-Skill
+### Claude Code — `/audit` skill
 
-Das Repo bringt einen fertigen Slash-Command mit: `.claude/commands/audit.md`.
+The repo ships a ready-made slash command: `.claude/commands/audit.md`.
 
-Im Tool-Repo selbst direkt aufrufbar:
+Callable directly inside the tool repo itself:
 
 ```
 /audit
@@ -101,45 +101,46 @@ Im Tool-Repo selbst direkt aufrufbar:
 /audit --json
 ```
 
-**Skill in ein anderes Projekt übernehmen:**
+**Use the skill in another project:**
 
-1. `.claude/commands/audit.md` in das `.claude/commands/`-Verzeichnis des Zielprojekts kopieren.
-2. Den Pfad im Skill auf die eigene Installation anpassen:
+1. Copy `.claude/commands/audit.md` into the target project's `.claude/commands/` directory.
+2. Adjust the path in the skill to point at your installation:
 
    ```bash
    npx tsx ~/.aic-lint/src/index.ts "$CLAUDE_PROJECT_ROOT"
    ```
 
-3. `/audit` steht jetzt im Zielprojekt zur Verfügung.
+3. `/audit` is now available in the target project.
 
 ### Codex CLI
 
-Direkt aus dem Terminal oder als Shell-Befehl im Codex-Kontext:
+Run it straight from the terminal or as a shell command in the Codex context:
 
 ```bash
 npx tsx ~/.aic-lint/src/index.ts .
 ```
 
-Das Tool erkennt `AGENTS.md` automatisch und prüft sie auf Qualität, Struktur und
-Parität mit `CLAUDE.md` — sinnvoll für Projekte, die beide Tools parallel nutzen.
+The tool detects `AGENTS.md` (and `AGENTS.override.md` / `.codex/AGENTS.md`)
+automatically and checks them for quality, structure and parity with `CLAUDE.md` —
+useful for projects that use both tools side by side.
 
 ---
 
-## Was wird geprüft
+## What gets checked
 
-| Pfad | Beschreibung |
+| Path | Description |
 |---|---|
-| `CLAUDE.md` (rekursiv) | Projekt-Kontext für Claude Code |
-| `.claude/commands/*.md` | Slash-Commands / Skills |
+| `CLAUDE.md` (recursive) | Project context for Claude Code |
+| `.claude/commands/*.md` | Slash commands / skills |
 | `.claude/agents/*.md` | Subagents |
-| `.claude/settings.json` | Claude Code Projekt-Settings |
-| `.claude/settings.local.json` | Lokale Overrides |
-| `.mcp.json` | MCP-Server-Konfiguration |
-| `AGENTS.md` | Projekt-Kontext für Codex CLI |
-| `AGENTS.override.md` | Codex CLI Override-Datei |
-| `.codex/AGENTS.md` | Projektspezifische Codex-Anweisungen |
-| `GEMINI.md` | Projekt-Kontext für Gemini CLI |
-| `docs/ai/*.md` | Tool-agnostische AI-Dokumentation |
+| `.claude/settings.json` | Claude Code project settings |
+| `.claude/settings.local.json` | Local overrides |
+| `.mcp.json` | MCP server configuration |
+| `AGENTS.md` | Project context for Codex CLI |
+| `AGENTS.override.md` | Codex CLI override file |
+| `.codex/AGENTS.md` | Project-specific Codex instructions |
+| `GEMINI.md` | Project context for Gemini CLI |
+| `docs/ai/*.md` | Tool-agnostic AI documentation |
 
-Die vollständige Liste aller Checks steht in **[docs/checks.md](docs/checks.md)**.
-Konzept und Hintergrund: **[docs/overview.md](docs/overview.md)**.
+The full list of all checks lives in **[docs/checks.md](docs/checks.md)**.
+Concept and background: **[docs/overview.md](docs/overview.md)**.
