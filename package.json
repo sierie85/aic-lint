@@ -1,6 +1,12 @@
 {
   "name": "aic-lint",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Local, deterministic linter for AI coding-assistant configs (CLAUDE.md, AGENTS.md, skills, agents) — with auto-fix.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "github:sierie85/aic-lint"
+  },
   "type": "module",
   "bin": {
     "aic-lint": "dist/index.js"

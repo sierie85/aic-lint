@@ -70,7 +70,7 @@ npm install -g .
 ## Usage (CLI)
 
 ```bash
-aic-lint [project-path] [--no-budget] [--json]
+aic-lint [project-path] [--no-budget] [--json] [--fix] [--fix-dry-run]
 ```
 
 Examples:
@@ -87,6 +87,12 @@ aic-lint . --no-budget
 
 # Machine-readable (for CI)
 aic-lint . --json
+
+# Auto-fix safe issues (frontmatter scaffolding, .gitignore hygiene)
+aic-lint . --fix
+
+# Preview what --fix would change, without writing
+aic-lint . --fix-dry-run
 ```
 
 ### Flags
@@ -96,6 +102,12 @@ aic-lint . --json
 | `[project-path]` | Root directory of the project to check (default: `.`) |
 | `--no-budget` | Omit the context-budget table |
 | `--json` | Output JSON instead of Markdown |
+| `--fix` | Apply safe auto-fixes in place (frontmatter scaffolding, `.gitignore` entries) |
+| `--fix-dry-run` | Show what `--fix` would change, without modifying any files |
+
+Auto-fixable findings are marked with *“auto-fixable (run --fix)”* in the report.
+Only deterministic, non-destructive fixes are applied — secrets, invalid JSON and
+dead references are always left for you to resolve.
 
 ### Exit codes
 
@@ -145,7 +157,7 @@ aic-lint .
 ```
 
 The tool detects `AGENTS.md` (and `AGENTS.override.md` / `.codex/AGENTS.md`)
-automatically and checks them for quality, structure and parity with `CLAUDE.md` —
+automatically and checks them for quality, structure, dead references and secrets —
 useful for projects that use both tools side by side.
 
 ---
@@ -165,6 +177,13 @@ useful for projects that use both tools side by side.
 | `.codex/AGENTS.md` | Project-specific Codex instructions |
 | `GEMINI.md` | Project context for Gemini CLI |
 | `docs/ai/*.md` | Tool-agnostic AI documentation |
+| `.gitignore` | Ensures sensitive files (`.env`, `.claude/settings.local.json`) are ignored |
 
 The full list of all checks lives in **[docs/checks.md](docs/checks.md)**.
 Concept and background: **[docs/overview.md](docs/overview.md)**.
+
+---
+
+## License
+
+[MIT](LICENSE) © sierie85
