@@ -13,6 +13,7 @@ export interface ProjectConfig {
   agentsOverrideMd: ConfigFile | null
   codexAgentsMd: ConfigFile | null
   geminiMd: ConfigFile | null
+  cursorRules: ConfigFile[]
   aiDocs: ConfigFile[]
   jsonConfigs: ConfigFile[]
   gitignore: ConfigFile | null

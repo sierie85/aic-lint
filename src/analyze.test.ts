@@ -21,6 +21,7 @@ test("checkAiConfigPresence warns when no AI config files present", () => {
   assert.equal(checkAiConfigPresence(makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "x")] })).length, 0)
   assert.equal(checkAiConfigPresence(makeConfig({ agentsMd: cf("AGENTS.md", "x") })).length, 0)
   assert.equal(checkAiConfigPresence(makeConfig({ geminiMd: cf("GEMINI.md", "x") })).length, 0)
+  assert.equal(checkAiConfigPresence(makeConfig({ cursorRules: [cf(".cursorrules", "x")] })).length, 0)
 })
 
 test("checkClaudeMdLength: error above 150, warn above 80, ok below", () => {
@@ -37,13 +38,14 @@ test("checkDeadRefs flags refs that do not exist (injected fileExists)", () => {
   assert.match(findings[0].message, /missing\.ts/)
 })
 
-test("checkDeadRefs also scans GEMINI.md and docs/ai", () => {
+test("checkDeadRefs also scans GEMINI.md, docs/ai and Cursor rules", () => {
   const config = makeConfig({
     geminiMd: cf("GEMINI.md", "see `src/gone.ts`"),
     aiDocs: [cf("docs/ai/x.md", "see `docs/missing.md`")],
+    cursorRules: [cf(".cursor/rules/main.mdc", "see `src/nope.ts`")],
   })
   const findings = checkDeadRefs(config, () => false)
-  assert.equal(findings.length, 2)
+  assert.equal(findings.length, 3)
 })
 
 test("checkClaudeMdStructure warns on long unstructured file, ignores short", () => {

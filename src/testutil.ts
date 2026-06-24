@@ -18,6 +18,7 @@ export function makeConfig(overrides: Partial<ProjectConfig> = {}): ProjectConfi
     agentsOverrideMd: null,
     codexAgentsMd: null,
     geminiMd: null,
+    cursorRules: [],
     aiDocs: [],
     jsonConfigs: [],
     gitignore: null,

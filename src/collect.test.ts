@@ -58,6 +58,18 @@ test("collect detects Codex AGENTS.override.md and .codex/AGENTS.md", () => {
   assert.equal(config.codexAgentsMd?.relPath, join(".codex", "AGENTS.md"))
 })
 
+test("collect reads Cursor rules (.cursorrules and .cursor/rules/*.mdc)", () => {
+  write(".cursorrules", "legacy rules")
+  write(".cursor/rules/main.mdc", "# rule")
+  write(".cursor/rules/style.mdc", "# style")
+  const config = collect(root)
+  assert.deepEqual(config.cursorRules.map((f) => f.relPath).sort(), [
+    ".cursorrules",
+    join(".cursor", "rules", "main.mdc"),
+    join(".cursor", "rules", "style.mdc"),
+  ].sort())
+})
+
 test("collect does not recurse into node_modules or dist", () => {
   write("CLAUDE.md", "root")
   write("node_modules/some-pkg/CLAUDE.md", "fremd")

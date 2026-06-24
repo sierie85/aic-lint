@@ -4,8 +4,8 @@ A **local linter for AI coding-assistant configs** — checks `CLAUDE.md`, `AGEN
 skills, subagents and other config files for quality, redundancy, dead references
 and accidentally committed secrets.
 
-Supports: **Claude Code**, **Codex CLI**, **Gemini CLI** and any tool built on
-`CLAUDE.md` or `AGENTS.md` conventions.
+Supports: **Claude Code**, **Codex CLI**, **Gemini CLI**, **Cursor** and any tool
+built on `CLAUDE.md`, `AGENTS.md` or `.cursor/rules` conventions.
 
 > **Fully local.** No API key, no subscription, no network.
 > Zero runtime dependencies — runs anywhere Node.js runs.
@@ -19,7 +19,7 @@ Supports: **Claude Code**, **Codex CLI**, **Gemini CLI** and any tool built on
 - **Auto-fix** — `--fix` applies safe corrections (frontmatter, `.gitignore`)
 - **Zero runtime dependencies** — only `tsx` + `typescript` as dev tools
 - **CI-friendly** — `--json` output and meaningful exit codes
-- **Multi-tool** — detects `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `docs/ai/` and more
+- **Multi-tool** — detects `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursor/rules` and more
 - **Secret scan** — ~24 prefix-specific token patterns, redacted in output
 
 ---
@@ -179,6 +179,8 @@ useful for projects that use both tools side by side.
 | `AGENTS.override.md` | Codex CLI override file |
 | `.codex/AGENTS.md` | Project-specific Codex instructions |
 | `GEMINI.md` | Project context for Gemini CLI |
+| `.cursorrules` | Legacy Cursor rules file |
+| `.cursor/rules/*.mdc` | Cursor project rules |
 | `docs/ai/*.md` | Tool-agnostic AI documentation |
 | `.gitignore` | Ensures sensitive files (`.env`, `.claude/settings.local.json`) are ignored |
 

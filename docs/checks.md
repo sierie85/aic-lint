@@ -15,8 +15,8 @@ secrets, invalid JSON and dead references are always left for a human.
 ### AI config present
 - **Level:** WARN
 - Warns when no AI config files are found at all — none of `CLAUDE.md`, `AGENTS.md`,
-  `AGENTS.override.md`, `.codex/AGENTS.md` or `GEMINI.md`. Having only one of them
-  is perfectly fine.
+  `AGENTS.override.md`, `.codex/AGENTS.md`, `GEMINI.md` or Cursor rules
+  (`.cursorrules`, `.cursor/rules/*.mdc`). Having only one of them is perfectly fine.
 
 ### CLAUDE.md length
 - **Level:** WARN (> 80 lines) · ERROR (> 150 lines)
@@ -33,7 +33,8 @@ secrets, invalid JSON and dead references are always left for a human.
   Markdown links that do not exist in the project. Bare filenames
   (`` `settings.json` ``), URLs, anchors (`#...`) and globs are ignored.
 - Checked in every Markdown source: `CLAUDE.md`, skills, agents, `AGENTS.md`,
-  `AGENTS.override.md`, `.codex/AGENTS.md`, `GEMINI.md` and `docs/ai/*.md`.
+  `AGENTS.override.md`, `.codex/AGENTS.md`, `GEMINI.md`, `.cursorrules`,
+  `.cursor/rules/*.mdc` and `docs/ai/*.md`.
 
 ### Skill quality
 - **Level:** WARN

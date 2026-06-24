@@ -56,6 +56,12 @@ export function collect(root: string): ProjectConfig {
   const codexAgentsMd = readFileIfExists(join(root, ".codex", "AGENTS.md"), root)
   const geminiMd = readFileIfExists(join(root, "GEMINI.md"), root)
 
+  // Cursor: the legacy .cursorrules root file plus the newer .cursor/rules/*.mdc files.
+  const cursorRules = [
+    ...compact(readFileIfExists(join(root, ".cursorrules"), root)),
+    ...readDir(join(root, ".cursor", "rules"), ".mdc", root),
+  ]
+
   const aiDocs = readDir(join(root, "docs", "ai"), ".md", root)
 
   const jsonConfigs = [
@@ -68,7 +74,7 @@ export function collect(root: string): ProjectConfig {
 
   const gitignore = readFileIfExists(join(root, ".gitignore"), root)
 
-  return { root, claudeMdFiles, skills, agents, agentsMd, agentsOverrideMd, codexAgentsMd, geminiMd, aiDocs, jsonConfigs, gitignore }
+  return { root, claudeMdFiles, skills, agents, agentsMd, agentsOverrideMd, codexAgentsMd, geminiMd, cursorRules, aiDocs, jsonConfigs, gitignore }
 }
 
 // All prose/Markdown files — relevant for checks that parse content
@@ -79,6 +85,7 @@ export function markdownFiles(config: ProjectConfig): ConfigFile[] {
     ...config.skills,
     ...config.agents,
     ...config.aiDocs,
+    ...config.cursorRules,
     ...compact(config.agentsMd, config.agentsOverrideMd, config.codexAgentsMd, config.geminiMd),
   ]
 }

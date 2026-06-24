@@ -33,10 +33,11 @@ export function checkAiConfigPresence(config: ProjectConfig): Finding[] {
     config.agentsMd !== null ||
     config.agentsOverrideMd !== null ||
     config.codexAgentsMd !== null ||
-    config.geminiMd !== null
+    config.geminiMd !== null ||
+    config.cursorRules.length > 0
   return hasAny
     ? []
-    : [finding("WARN", "No AI config files found (CLAUDE.md, AGENTS.md, GEMINI.md)")]
+    : [finding("WARN", "No AI config files found (CLAUDE.md, AGENTS.md, GEMINI.md, .cursorrules)")]
 }
 
 export function checkClaudeMdLength(config: ProjectConfig): Finding[] {
