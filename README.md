@@ -25,23 +25,44 @@ Supports: **Claude Code**, **Codex CLI**, **Gemini CLI** and any tool built on
 
 Requirement: **Node.js ≥ 18**.
 
-### Option A — Global install (recommended)
+### One-line install (recommended)
 
-Clone once and install globally — then `aic-lint` is available in every project:
+Install globally straight from GitHub — no clone, no manual build:
 
 ```bash
-git clone <repo-url> ~/.aic-lint
-cd ~/.aic-lint
-npm install
-npm install -g .
+npm install -g github:sierie85/aic-lint
 ```
 
-### Option B — As a git submodule inside an existing repo
+`aic-lint` is now available in every project. To update, run the same command again.
+
+Then make the `/audit` slash command available in **all** your projects at once:
 
 ```bash
-cd my-project
-git submodule add <repo-url> .aic-lint
-cd .aic-lint && npm install && npm install -g .
+aic-lint init
+```
+
+`init` auto-detects which assistants you use and installs the command for each:
+
+- **Claude Code** → `~/.claude/commands/audit.md`
+- **Codex CLI** → `~/.codex/prompts/audit.md`
+
+It installs to whichever tool home (`~/.claude`, `~/.codex`) already exists, so `/audit`
+works everywhere without copying anything. Override the detection with flags:
+
+| Flag | Effect |
+|---|---|
+| `--claude` | Install only the Claude Code command |
+| `--codex` | Install only the Codex CLI prompt |
+| `--all` | Install for both tools |
+| `--project` | Put the Claude command in the current repo (`./.claude/commands/`) instead of user-level |
+
+### From a local clone (for development)
+
+```bash
+git clone https://github.com/sierie85/aic-lint ~/.aic-lint
+cd ~/.aic-lint
+npm install        # installs dev tools and builds dist/
+npm install -g .
 ```
 
 ---
@@ -93,11 +114,17 @@ aic-lint . --json || echo "Audit failed"
 
 ## Integration
 
-### Claude Code — `/audit` skill
+### Claude Code & Codex CLI — `/audit` command
 
-The repo ships a ready-made slash command: `.claude/commands/audit.md`.
+Install the slash command once for every project (auto-detects your tools):
 
-Callable directly inside the tool repo itself:
+```bash
+aic-lint init            # detected tools, user-level (all projects)
+aic-lint init --all      # force both Claude Code and Codex CLI
+aic-lint init --project  # Claude command in the current repo only
+```
+
+Then call it inside the assistant:
 
 ```
 /audit
@@ -105,12 +132,9 @@ Callable directly inside the tool repo itself:
 /audit --json
 ```
 
-**Use the skill in another project:**
-
-1. Copy `.claude/commands/audit.md` into the target project's `.claude/commands/` directory.
-2. The skill calls `aic-lint` directly — no path adjustment needed after a global install.
-
-3. `/audit` is now available in the target project.
+The command just runs `aic-lint` on the current project, so no path adjustment is
+ever needed after the global install. See [Installation](#one-line-install-recommended)
+for the full flag list.
 
 ### Codex CLI
 

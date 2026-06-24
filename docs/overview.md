@@ -37,9 +37,13 @@ The one thing that used to require the API (exact token counting) is replaced by
 
 ### 2. Zero runtime dependencies
 
-Apart from `tsx`/`typescript` (dev tooling), the tool has no dependencies. Even
+The tool compiles to plain JavaScript (`dist/`) and runs on Node alone — `tsx` and
+`typescript` are pure dev/build tooling that is pruned from a global install. Even
 frontmatter parsing and secret scanning are implemented dependency-free. This keeps
 the tool small, portable and auditable.
+
+The build is wired into the `prepare` lifecycle script, so
+`npm install -g github:sierie85/aic-lint` compiles automatically on install.
 
 ### 3. Severity-based findings
 

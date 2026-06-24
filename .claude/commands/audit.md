@@ -15,13 +15,12 @@ project. No API access, no network, no API key required.
 
 ## What gets checked
 
+- **AI config present** — warns if no CLAUDE.md / AGENTS.md / GEMINI.md exists at all
 - **CLAUDE.md** — line length, structure (## sections), dead path references
 - **Skills** (`.claude/commands/*.md`) — H1 title, descriptive text, overlap, frontmatter
 - **Agents** (`.claude/agents/*.md`) — frontmatter (name/description)
+- **Redundancy** — same content line in CLAUDE.md and a skill (local, no LLM)
 - **JSON configs** (`settings.json`, `settings.local.json`, `.mcp.json`) — valid JSON
-- **AGENTS.md / GEMINI.md** — presence, consistency with CLAUDE.md
-- **/docs/ai/** — tool-agnostic AI baseline present?
-- **Redundancy** — same content in CLAUDE.md and skills (local, no LLM)
 - **Secret scan** — accidentally committed API keys/tokens
 - **Context budget** — rough local token estimate per file
 

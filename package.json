@@ -3,10 +3,15 @@
   "private": true,
   "type": "module",
   "bin": {
-    "aic-lint": "bin/aic-lint"
+    "aic-lint": "dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "audit": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
