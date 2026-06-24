@@ -24,10 +24,19 @@ export interface Fix {
   apply: (content: string) => string // pure transform of the file's content
 }
 
+export type Category = "structure" | "maintainability" | "validity" | "security"
+
 export interface Finding {
   level: "ERROR" | "WARN" | "INFO"
   message: string
   fix?: Fix
+  category?: Category
+}
+
+export interface Score {
+  overall: number
+  grade: string
+  dimensions: Record<Category, number>
 }
 
 export interface ContextBudget {

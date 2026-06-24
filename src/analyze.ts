@@ -1,6 +1,6 @@
 import { existsSync } from "fs"
 import { basename, join } from "path"
-import type { Finding, Fix, ProjectConfig } from "./types.js"
+import type { Category, Finding, Fix, ProjectConfig } from "./types.js"
 import { allFiles, markdownFiles } from "./collect.js"
 import { parseFrontmatter } from "./frontmatter.js"
 import { scanSecrets } from "./secrets.js"
@@ -204,21 +204,29 @@ export function checkSecrets(config: ProjectConfig): Finding[] {
   )
 }
 
-// The full check suite, in report order. Add or remove a check here.
-const CHECKS: ((config: ProjectConfig, fileExists: FileExists) => Finding[])[] = [
-  checkAiConfigPresence,
-  checkClaudeMdLength,
-  checkDeadRefs,
-  checkClaudeMdStructure,
-  checkSkillQuality,
-  checkSkillOverlap,
-  checkRedundancy,
-  checkFrontmatter,
-  checkJsonConfigs,
-  checkGitignore,
-  checkSecrets,
+interface CheckEntry {
+  check: (config: ProjectConfig, fileExists: FileExists) => Finding[]
+  category: Category
+}
+
+// The full check suite, in report order. Each check is tagged with the score
+// dimension it contributes to. Add or remove a check here.
+const CHECKS: CheckEntry[] = [
+  { check: checkAiConfigPresence, category: "structure" },
+  { check: checkClaudeMdLength, category: "maintainability" },
+  { check: checkDeadRefs, category: "maintainability" },
+  { check: checkClaudeMdStructure, category: "structure" },
+  { check: checkSkillQuality, category: "structure" },
+  { check: checkSkillOverlap, category: "maintainability" },
+  { check: checkRedundancy, category: "maintainability" },
+  { check: checkFrontmatter, category: "structure" },
+  { check: checkJsonConfigs, category: "validity" },
+  { check: checkGitignore, category: "security" },
+  { check: checkSecrets, category: "security" },
 ]
 
 export function analyze(config: ProjectConfig, fileExists: FileExists = existsSync): Finding[] {
-  return CHECKS.flatMap((check) => check(config, fileExists))
+  return CHECKS.flatMap(({ check, category }) =>
+    check(config, fileExists).map((f) => ({ ...f, category })),
+  )
 }

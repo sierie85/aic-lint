@@ -2,7 +2,8 @@ import { analyze } from "./analyze.js"
 import { collect } from "./collect.js"
 import { buildContextBudget } from "./estimate.js"
 import { generateReport } from "./report.js"
-import type { ContextBudget, Finding } from "./types.js"
+import { computeScore } from "./score.js"
+import type { ContextBudget, Finding, Score } from "./types.js"
 
 export interface RunOptions {
   noBudget?: boolean
@@ -11,6 +12,7 @@ export interface RunOptions {
 export interface AuditResult {
   projectRoot: string
   findings: Finding[]
+  score: Score
   budget?: ContextBudget
   hasErrors: boolean
 }
@@ -18,11 +20,12 @@ export interface AuditResult {
 export function runAudit(projectRoot: string, options: RunOptions = {}): AuditResult {
   const config = collect(projectRoot)
   const findings = analyze(config)
+  const score = computeScore(findings)
   const budget = options.noBudget ? undefined : buildContextBudget(config)
   const hasErrors = findings.some((f) => f.level === "ERROR")
-  return { projectRoot, findings, budget, hasErrors }
+  return { projectRoot, findings, score, budget, hasErrors }
 }
 
 export function toMarkdown(result: AuditResult): string {
-  return generateReport(result.projectRoot, result.findings, result.budget)
+  return generateReport(result.projectRoot, result.findings, result.score, result.budget)
 }

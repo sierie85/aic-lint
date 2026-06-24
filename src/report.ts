@@ -1,4 +1,4 @@
-import type { ContextBudget, Finding } from "./types.js"
+import type { ContextBudget, Finding, Score } from "./types.js"
 
 function fmt(n: number): string {
   return n.toLocaleString("en-US")
@@ -11,6 +11,7 @@ function msg(f: Finding): string {
 export function generateReport(
   root: string,
   findings: Finding[],
+  score?: Score,
   budget?: ContextBudget,
 ): string {
   const lines: string[] = [
@@ -18,6 +19,14 @@ export function generateReport(
     `Generated: ${new Date().toISOString().slice(0, 10)}`,
     "",
   ]
+
+  if (score) {
+    lines.push(`## Score: ${score.overall} / 100 (${score.grade})`, "", "| Dimension | Score |", "|---|---|")
+    for (const [dim, value] of Object.entries(score.dimensions)) {
+      lines.push(`| ${dim.charAt(0).toUpperCase()}${dim.slice(1)} | ${value} |`)
+    }
+    lines.push("")
+  }
 
   if (budget && budget.totalEstimatedTokens > 0) {
     lines.push(

@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { generateReport } from "./report.js"
-import type { ContextBudget, Finding } from "./types.js"
+import type { ContextBudget, Finding, Score } from "./types.js"
 
 test("report renders header and 'no problems' when empty", () => {
   const out = generateReport("/project", [])
@@ -32,7 +32,7 @@ test("report renders budget rows by file path", () => {
     files: { "CLAUDE.md": 1000, "AGENTS.md": 500, ".claude/commands/audit.md": 200 },
     totalEstimatedTokens: 1700,
   }
-  const out = generateReport("/project", [], budget)
+  const out = generateReport("/project", [], undefined, budget)
   assert.match(out, /## Context budget \(rough local estimate\)/)
   assert.match(out, /\| CLAUDE\.md \| 1,000 \|/)
   assert.match(out, /\| AGENTS\.md \| 500 \|/)
@@ -41,11 +41,23 @@ test("report renders budget rows by file path", () => {
 
 test("report skips budget section when total is 0", () => {
   const budget: ContextBudget = { files: {}, totalEstimatedTokens: 0 }
-  const out = generateReport("/project", [], budget)
+  const out = generateReport("/project", [], undefined, budget)
   assert.doesNotMatch(out, /Context budget/)
 })
 
 test("report has no budget table when budget is omitted", () => {
   const out = generateReport("/project", [])
   assert.doesNotMatch(out, /Context budget/)
+})
+
+test("report renders the score block with grade and dimensions", () => {
+  const score: Score = {
+    overall: 84,
+    grade: "B",
+    dimensions: { security: 75, structure: 92, maintainability: 80, validity: 100 },
+  }
+  const out = generateReport("/project", [], score)
+  assert.match(out, /## Score: 84 \/ 100 \(B\)/)
+  assert.match(out, /\| Security \| 75 \|/)
+  assert.match(out, /\| Validity \| 100 \|/)
 })

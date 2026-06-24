@@ -35,6 +35,18 @@ test("runAudit flags hasErrors=true when an oversized CLAUDE.md exists", () => {
   assert.equal(runAudit(root, { noBudget: true }).hasErrors, true)
 })
 
+test("runAudit always includes a 0-100 score with a grade", () => {
+  write("CLAUDE.md", "## A\n\ntext")
+  const { score } = runAudit(root, { noBudget: true })
+  assert.ok(score.overall >= 0 && score.overall <= 100)
+  assert.match(score.grade, /^[A-F]$/)
+})
+
+test("toMarkdown renders the score block", () => {
+  write("CLAUDE.md", "## A\n\ntext")
+  assert.match(toMarkdown(runAudit(root, { noBudget: true })), /## Score: \d+ \/ 100/)
+})
+
 test("runAudit includes a context budget by default", () => {
   write("CLAUDE.md", "## A\n\ntext")
   const result = runAudit(root)

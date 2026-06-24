@@ -155,3 +155,12 @@ test("analyze composes all checks in order", () => {
   const levels = findings.map((f) => f.level)
   assert.ok(levels.includes("ERROR")) // length > 150
 })
+
+test("analyze tags every finding with a score category", () => {
+  const config = makeConfig({ claudeMdFiles: [cf("CLAUDE.md", lines(160))] })
+  const findings = analyze(config, () => true)
+  assert.ok(findings.length > 0)
+  assert.ok(findings.every((f) => f.category !== undefined))
+  // an oversized CLAUDE.md is a maintainability concern
+  assert.ok(findings.some((f) => f.category === "maintainability"))
+})
