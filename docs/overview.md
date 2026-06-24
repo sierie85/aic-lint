@@ -79,6 +79,13 @@ heuristic (a blend of character and word counts). The numbers are marked as an
 **estimate** and are best suited for *relative* comparison ("which file is the
 heaviest?"), not as an exact billing basis.
 
+The budget separates **always-on** context — files loaded into the model on *every*
+session (all `CLAUDE.md`, `AGENTS.md`/`AGENTS.override.md`/`.codex/AGENTS.md`,
+`GEMINI.md`, `.cursorrules` and `.cursor/rules/*.mdc` with `alwaysApply: true`) — from
+**on-demand** context (skills, subagents, `docs/ai`, conditional Cursor rules). The
+always-on number is the per-session cost that actually matters; the `Context budget`
+check (dimension *efficiency*) warns when it exceeds ~8,000 tokens (error at ~16,000).
+
 ## Usage modes
 
 - **CLI** — straight in the terminal, Markdown or `--json`
@@ -90,11 +97,11 @@ heaviest?"), not as an exact billing basis.
 ## Score
 
 The report opens with a **0–100 score** and a letter grade (A–F), computed locally
-and deterministically — no LLM, no network. Each check contributes to one of four
-dimensions: **structure**, **maintainability**, **validity** and **security**. A
-dimension starts at 100 and loses points per finding (ERROR > WARN > INFO), and the
-overall score is a weighted average (security weighted highest). The numbers are a
-relative health signal, not an absolute audit grade.
+and deterministically — no LLM, no network. Each check contributes to one of five
+dimensions: **structure**, **efficiency** (token cost), **maintainability**,
+**validity** and **security**. A dimension starts at 100 and loses points per finding
+(ERROR > WARN > INFO), and the overall score is a weighted average (security weighted
+highest). The numbers are a relative health signal, not an absolute audit grade.
 
 ## Auto-fix
 

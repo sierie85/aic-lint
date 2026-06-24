@@ -27,20 +27,27 @@ test("report omits sections that have no findings", () => {
   assert.doesNotMatch(out, /## Notices/)
 })
 
-test("report renders budget rows by file path", () => {
+test("report renders the budget with always-on split and Loaded column", () => {
   const budget: ContextBudget = {
-    files: { "CLAUDE.md": 1000, "AGENTS.md": 500, ".claude/commands/audit.md": 200 },
+    files: [
+      { relPath: "CLAUDE.md", tokens: 1000, alwaysOn: true },
+      { relPath: "AGENTS.md", tokens: 500, alwaysOn: true },
+      { relPath: ".claude/commands/audit.md", tokens: 200, alwaysOn: false },
+    ],
+    alwaysOnTokens: 1500,
+    onDemandTokens: 200,
     totalEstimatedTokens: 1700,
   }
   const out = generateReport("/project", [], undefined, budget)
   assert.match(out, /## Context budget \(rough local estimate\)/)
-  assert.match(out, /\| CLAUDE\.md \| 1,000 \|/)
-  assert.match(out, /\| AGENTS\.md \| 500 \|/)
+  assert.match(out, /\*\*Always-on context: ~1,500 tokens\*\*/)
+  assert.match(out, /\| CLAUDE\.md \| 1,000 \| always \|/)
+  assert.match(out, /\| \.claude\/commands\/audit\.md \| 200 \| on-demand \|/)
   assert.match(out, /\*\*Total\*\* \| \*\*1,700\*\*/)
 })
 
 test("report skips budget section when total is 0", () => {
-  const budget: ContextBudget = { files: {}, totalEstimatedTokens: 0 }
+  const budget: ContextBudget = { files: [], alwaysOnTokens: 0, onDemandTokens: 0, totalEstimatedTokens: 0 }
   const out = generateReport("/project", [], undefined, budget)
   assert.doesNotMatch(out, /Context budget/)
 })
@@ -54,7 +61,7 @@ test("report renders the score block with grade and dimensions", () => {
   const score: Score = {
     overall: 84,
     grade: "B",
-    dimensions: { security: 75, structure: 92, maintainability: 80, validity: 100 },
+    dimensions: { security: 75, structure: 92, efficiency: 88, maintainability: 80, validity: 100 },
   }
   const out = generateReport("/project", [], score)
   assert.match(out, /## Score: 84 \/ 100 \(B\)/)

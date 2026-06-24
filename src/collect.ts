@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from "fs"
 import { join, relative } from "path"
 import type { ConfigFile, ProjectConfig } from "./types.js"
+import { parseFrontmatter } from "./frontmatter.js"
 
 function readConfigFile(absPath: string, root: string): ConfigFile {
   const content = readFileSync(absPath, "utf8")
@@ -45,8 +46,9 @@ function readDir(dir: string, ext: string, root: string): ConfigFile[] {
 }
 
 export function collect(root: string): ProjectConfig {
-  const claudeMdPaths = findFiles(root, "CLAUDE.md").sort()
-  const claudeMdFiles = claudeMdPaths.map((p) => readConfigFile(p, root))
+  const claudeMdFiles = findFiles(root, "CLAUDE.md")
+    .sort()
+    .map((p) => readConfigFile(p, root))
 
   const skills = readDir(join(root, ".claude", "commands"), ".md", root)
   const agents = readDir(join(root, ".claude", "agents"), ".md", root)
@@ -94,4 +96,21 @@ export function markdownFiles(config: ProjectConfig): ConfigFile[] {
 // which must not skip anything.
 export function allFiles(config: ProjectConfig): ConfigFile[] {
   return [...markdownFiles(config), ...config.jsonConfigs]
+}
+
+// A Cursor rule is always-on if it is the legacy .cursorrules file, or a
+// .cursor/rules/*.mdc file with `alwaysApply: true` in its frontmatter.
+function isAlwaysOnCursorRule(file: ConfigFile): boolean {
+  if (file.relPath === ".cursorrules") return true
+  return parseFrontmatter(file.content).fields.alwaysApply === "true"
+}
+
+// Files loaded into the model's context on *every* session — the per-session
+// token cost. Everything else in markdownFiles() is on-demand.
+export function alwaysOnFiles(config: ProjectConfig): ConfigFile[] {
+  return [
+    ...config.claudeMdFiles,
+    ...compact(config.agentsMd, config.agentsOverrideMd, config.codexAgentsMd, config.geminiMd),
+    ...config.cursorRules.filter(isAlwaysOnCursorRule),
+  ]
 }

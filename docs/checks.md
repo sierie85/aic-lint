@@ -2,8 +2,8 @@
 
 All checks run purely locally and deterministically. Every finding has a level:
 **ERROR** (exit code 1), **WARN** or **INFO**. The report also opens with a **0–100
-score** per dimension (structure / maintainability / validity / security) plus a
-letter grade — see [overview.md](overview.md#score).
+score** per dimension (structure / efficiency / maintainability / validity / security)
+plus a letter grade — see [overview.md](overview.md#score).
 
 Some findings are **auto-fixable** — run `aic-lint . --fix` to apply safe,
 deterministic corrections in place, or `--fix-dry-run` to preview them. Only
@@ -21,6 +21,15 @@ secrets, invalid JSON and dead references are always left for a human.
 ### CLAUDE.md length
 - **Level:** WARN (> 80 lines) · ERROR (> 150 lines)
 - A long `CLAUDE.md` costs context on every session. Recommendation: < 80 lines.
+  The finding also reports the estimated token cost.
+
+### Context budget (always-on)
+- **Level:** WARN (> 8,000 tokens) · ERROR (> 16,000 tokens)
+- Sums the estimated tokens of all **always-on** files (loaded every session: all
+  `CLAUDE.md`, `AGENTS.md`/`AGENTS.override.md`/`.codex/AGENTS.md`, `GEMINI.md`,
+  `.cursorrules` and `.cursor/rules/*.mdc` with `alwaysApply: true`). On-demand files
+  (skills, subagents, `docs/ai`, conditional Cursor rules) do **not** count.
+- The finding names the heaviest always-on file so you know where to trim.
 
 ### CLAUDE.md structure
 - **Level:** WARN
@@ -50,7 +59,7 @@ secrets, invalid JSON and dead references are always left for a human.
 - **Level:** WARN
 - The same content line (≥ 40 characters, normalized) appears in multiple files
   at once — e.g. in `CLAUDE.md` *and* a skill. Headings, code blocks and short
-  lines are excluded.
+  lines are excluded. The finding estimates the tokens wasted by the duplication.
 
 ## Frontmatter
 
@@ -101,6 +110,7 @@ secrets, invalid JSON and dead references are always left for a human.
 |---|---|
 | AI config present | WARN |
 | CLAUDE.md length | WARN / ERROR |
+| Context budget (always-on) | WARN / ERROR |
 | CLAUDE.md structure | WARN |
 | Dead references | ERROR |
 | Skill quality | WARN |

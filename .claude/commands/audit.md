@@ -26,7 +26,7 @@ project. No API access, no network, no API key required. The report opens with a
 - **JSON configs** (`settings.json`, `settings.local.json`, `.mcp.json`) — valid JSON
 - **Gitignore safety** — .env / .claude/settings.local.json must be gitignored
 - **Secret scan** — accidentally committed API keys/tokens
-- **Context budget** — rough local token estimate per file
+- **Context budget** — always-on (per-session) token cost; warns when it bloats
 
 ## Execution
 

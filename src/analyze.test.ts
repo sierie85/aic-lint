@@ -4,6 +4,7 @@ import {
   analyze,
   checkAiConfigPresence,
   checkClaudeMdLength,
+  checkContextBudget,
   checkClaudeMdStructure,
   checkDeadRefs,
   checkFrontmatter,
@@ -84,6 +85,7 @@ test("checkRedundancy flags a long line shared across two files", () => {
   const findings = checkRedundancy(config)
   assert.equal(findings.length, 1)
   assert.match(findings[0].message, /CLAUDE\.md \+ s\.md/)
+  assert.match(findings[0].message, /tokens duplicated/)
 })
 
 test("checkRedundancy ignores short lines and code fences", () => {
@@ -134,6 +136,44 @@ test("checkGitignore stays silent when the sensitive file does not exist", () =>
   assert.equal(checkGitignore(config, () => false).length, 0)
 })
 
+test("checkGitignore flags an unignored .claude/settings.local.json", () => {
+  const config = makeConfig({ root: "/proj", gitignore: cf(".gitignore", "node_modules\n") })
+  const findings = checkGitignore(config, (p) => p.endsWith("settings.local.json"))
+  assert.equal(findings.length, 1)
+  assert.match(findings[0].message, /settings\.local\.json/)
+})
+
+test("checkGitignore accepts a bare basename in .gitignore", () => {
+  const config = makeConfig({ root: "/proj", gitignore: cf(".gitignore", "settings.local.json\n") })
+  assert.equal(checkGitignore(config, (p) => p.endsWith("settings.local.json")).length, 0)
+})
+
+test("checkGitignore respects a directory pattern that covers the file", () => {
+  const config = makeConfig({ root: "/proj", gitignore: cf(".gitignore", ".claude/\n") })
+  assert.equal(checkGitignore(config, (p) => p.endsWith("settings.local.json")).length, 0)
+})
+
+test("checkGitignore warns with no .gitignore at all", () => {
+  const config = makeConfig({ root: "/proj", gitignore: null })
+  assert.equal(checkGitignore(config, (p) => p.endsWith(".env")).length, 1)
+})
+
+test("checkContextBudget warns when always-on context exceeds the budget", () => {
+  const findings = checkContextBudget(makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "word ".repeat(7000))] }))
+  assert.equal(findings.length, 1)
+  assert.equal(findings[0].level, "WARN")
+  assert.match(findings[0].message, /Always-on context/)
+})
+
+test("checkContextBudget errors on a very large always-on context", () => {
+  const findings = checkContextBudget(makeConfig({ agentsMd: cf("AGENTS.md", "word ".repeat(13000)) }))
+  assert.equal(findings[0].level, "ERROR")
+})
+
+test("checkContextBudget ignores on-demand files (a big skill does not count)", () => {
+  assert.equal(checkContextBudget(makeConfig({ skills: [cf("s.md", "word ".repeat(7000))] })).length, 0)
+})
+
 test("checkJsonConfigs flags invalid JSON", () => {
   const bad = cf(".claude/settings.json", "{ broken ")
   assert.equal(checkJsonConfigs(makeConfig({ jsonConfigs: [bad] }))[0].level, "ERROR")
@@ -163,6 +203,6 @@ test("analyze tags every finding with a score category", () => {
   const findings = analyze(config, () => true)
   assert.ok(findings.length > 0)
   assert.ok(findings.every((f) => f.category !== undefined))
-  // an oversized CLAUDE.md is a maintainability concern
-  assert.ok(findings.some((f) => f.category === "maintainability"))
+  // an oversized CLAUDE.md is an efficiency (token-cost) concern
+  assert.ok(findings.some((f) => f.category === "efficiency"))
 })

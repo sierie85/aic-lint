@@ -15,7 +15,8 @@ built on `CLAUDE.md`, `AGENTS.md` or `.cursor/rules` conventions.
 ## Highlights
 
 - **Deterministic** — no LLM calls, same input → same result
-- **Scored** — a local 0–100 score (A–F) across four dimensions, no API needed
+- **Token-aware** — shows your **always-on** per-session context cost and warns when it bloats
+- **Scored** — a local 0–100 score (A–F) across five dimensions, no API needed
 - **Auto-fix** — `--fix` applies safe corrections (frontmatter, `.gitignore`)
 - **Zero runtime dependencies** — only `tsx` + `typescript` as dev tools
 - **CI-friendly** — `--json` output and meaningful exit codes

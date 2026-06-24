@@ -25,7 +25,7 @@ export interface Fix {
   apply: (content: string) => string // pure transform of the file's content
 }
 
-export type Category = "structure" | "maintainability" | "validity" | "security"
+export type Category = "structure" | "efficiency" | "maintainability" | "validity" | "security"
 
 export interface Finding {
   level: "ERROR" | "WARN" | "INFO"
@@ -40,7 +40,15 @@ export interface Score {
   dimensions: Record<Category, number>
 }
 
+export interface BudgetFile {
+  relPath: string
+  tokens: number
+  alwaysOn: boolean // loaded into context every session (vs. on-demand)
+}
+
 export interface ContextBudget {
-  files: Record<string, number>
+  files: BudgetFile[]
+  alwaysOnTokens: number
+  onDemandTokens: number
   totalEstimatedTokens: number
 }

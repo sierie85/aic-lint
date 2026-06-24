@@ -1,5 +1,5 @@
 import type { ContextBudget, ProjectConfig } from "./types.js"
-import { markdownFiles } from "./collect.js"
+import { alwaysOnFiles, markdownFiles } from "./collect.js"
 
 // Local, dependency-free token estimate. Blends a character-based
 // (~chars/4, close to real BPE tokenization for English prose) and a
@@ -15,10 +15,14 @@ export function estimateTokens(text: string): number {
 }
 
 export function buildContextBudget(config: ProjectConfig): ContextBudget {
-  const files: Record<string, number> = {}
-  for (const f of markdownFiles(config)) {
-    files[f.relPath] = estimateTokens(f.content)
-  }
-  const totalEstimatedTokens = Object.values(files).reduce((a, b) => a + b, 0)
-  return { files, totalEstimatedTokens }
+  const alwaysOn = new Set(alwaysOnFiles(config).map((f) => f.relPath))
+  const files = markdownFiles(config).map((f) => ({
+    relPath: f.relPath,
+    tokens: estimateTokens(f.content),
+    alwaysOn: alwaysOn.has(f.relPath),
+  }))
+  const sum = (subset: typeof files) => subset.reduce((a, f) => a + f.tokens, 0)
+  const alwaysOnTokens = sum(files.filter((f) => f.alwaysOn))
+  const onDemandTokens = sum(files.filter((f) => !f.alwaysOn))
+  return { files, alwaysOnTokens, onDemandTokens, totalEstimatedTokens: alwaysOnTokens + onDemandTokens }
 }

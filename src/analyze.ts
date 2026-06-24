@@ -1,9 +1,10 @@
 import { existsSync } from "fs"
 import { basename, join } from "path"
 import type { Category, Finding, Fix, ProjectConfig } from "./types.js"
-import { allFiles, markdownFiles } from "./collect.js"
+import { allFiles, alwaysOnFiles, markdownFiles } from "./collect.js"
 import { parseFrontmatter } from "./frontmatter.js"
 import { scanSecrets } from "./secrets.js"
+import { estimateTokens } from "./estimate.js"
 import { appendLine, insertFrontmatterField, prependFrontmatter } from "./fix.js"
 import { extractFileRefs, extractH2Headings, stripCodeFences } from "./markdown.js"
 
@@ -22,6 +23,9 @@ const OVERLAP_MIN_SHARED = 2
 const REDUNDANCY_MIN_LEN = 40
 // Sensitive files that should never be committed if they exist.
 const GITIGNORE_SENSITIVE = [".env", ".claude/settings.local.json"]
+// Recommended ceiling for always-on context (loaded every session).
+const ALWAYS_ON_WARN_TOKENS = 8000
+const ALWAYS_ON_ERROR_TOKENS = 16000
 
 function finding(level: Finding["level"], message: string, fix?: Fix): Finding {
   return fix ? { level, message, fix } : { level, message }
@@ -42,7 +46,7 @@ export function checkAiConfigPresence(config: ProjectConfig): Finding[] {
 
 export function checkClaudeMdLength(config: ProjectConfig): Finding[] {
   return config.claudeMdFiles.flatMap((file) => {
-    const note = `${file.relPath}: ${file.lineCount} lines (recommended: < ${CLAUDE_MD_WARN_LINES})`
+    const note = `${file.relPath}: ${file.lineCount} lines, ~${estimateTokens(file.content)} tokens (recommended: < ${CLAUDE_MD_WARN_LINES} lines)`
     if (file.lineCount > CLAUDE_MD_ERROR_LINES) return [finding("ERROR", note)]
     if (file.lineCount > CLAUDE_MD_WARN_LINES) return [finding("WARN", note)]
     return []
@@ -115,7 +119,8 @@ export function checkRedundancy(config: ProjectConfig): Finding[] {
     if (paths.size < 2) continue
     const where = [...paths].sort().join(" + ")
     const preview = norm.length > 60 ? `${norm.slice(0, 60)}…` : norm
-    findings.push(finding("WARN", `Redundancy in ${where}: "${preview}"`))
+    const wasted = estimateTokens(norm) * (paths.size - 1)
+    findings.push(finding("WARN", `Redundancy in ${where}: "${preview}" (~${wasted} tokens duplicated)`))
   }
   return findings
 }
@@ -179,7 +184,13 @@ export function checkJsonConfigs(config: ProjectConfig): Finding[] {
 function isGitignored(entry: string, patterns: Set<string>): boolean {
   if (patterns.has(entry) || patterns.has(`/${entry}`)) return true
   const base = entry.split("/").pop()!
-  return patterns.has(base) || patterns.has(`/${base}`)
+  if (patterns.has(base) || patterns.has(`/${base}`)) return true
+  // A directory pattern (e.g. ".claude/" or "/.claude") covers everything under it.
+  for (const p of patterns) {
+    const dir = p.replace(/^\//, "").replace(/\/$/, "")
+    if (dir && entry.startsWith(`${dir}/`)) return true
+  }
+  return false
 }
 
 export function checkGitignore(config: ProjectConfig, fileExists: FileExists = existsSync): Finding[] {
@@ -195,6 +206,17 @@ export function checkGitignore(config: ProjectConfig, fileExists: FileExists = e
         apply: (c) => appendLine(c, entry),
       }),
     )
+}
+
+export function checkContextBudget(config: ProjectConfig): Finding[] {
+  const alwaysOn = alwaysOnFiles(config).map((f) => ({ relPath: f.relPath, tokens: estimateTokens(f.content) }))
+  const total = alwaysOn.reduce((a, f) => a + f.tokens, 0)
+  if (total <= ALWAYS_ON_WARN_TOKENS) return []
+
+  const heaviest = alwaysOn.reduce((a, b) => (b.tokens > a.tokens ? b : a))
+  const hint = `loaded every session — consider moving detail into on-demand skills/docs (heaviest: ${heaviest.relPath} ~${heaviest.tokens} tokens)`
+  const level = total > ALWAYS_ON_ERROR_TOKENS ? "ERROR" : "WARN"
+  return [finding(level, `Always-on context ~${total} tokens exceeds the recommended ${ALWAYS_ON_WARN_TOKENS} (${hint})`)]
 }
 
 export function checkSecrets(config: ProjectConfig): Finding[] {
@@ -214,12 +236,13 @@ interface CheckEntry {
 // dimension it contributes to. Add or remove a check here.
 const CHECKS: CheckEntry[] = [
   { check: checkAiConfigPresence, category: "structure" },
-  { check: checkClaudeMdLength, category: "maintainability" },
+  { check: checkClaudeMdLength, category: "efficiency" },
   { check: checkDeadRefs, category: "maintainability" },
   { check: checkClaudeMdStructure, category: "structure" },
   { check: checkSkillQuality, category: "structure" },
   { check: checkSkillOverlap, category: "maintainability" },
-  { check: checkRedundancy, category: "maintainability" },
+  { check: checkRedundancy, category: "efficiency" },
+  { check: checkContextBudget, category: "efficiency" },
   { check: checkFrontmatter, category: "structure" },
   { check: checkJsonConfigs, category: "validity" },
   { check: checkGitignore, category: "security" },

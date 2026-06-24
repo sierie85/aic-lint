@@ -32,32 +32,29 @@ export function generateReport(
     lines.push(
       "## Context budget (rough local estimate)",
       "",
-      "| File | ~Tokens |",
-      "|---|---|",
+      `**Always-on context: ~${fmt(budget.alwaysOnTokens)} tokens** — loaded every session`,
+      `On-demand context: ~${fmt(budget.onDemandTokens)} tokens`,
+      "",
+      "| File | ~Tokens | Loaded |",
+      "|---|---|---|",
     )
-    for (const [relPath, tokens] of Object.entries(budget.files)) {
-      lines.push(`| ${relPath} | ${fmt(tokens)} |`)
+    const ordered = [...budget.files].sort((a, b) => Number(b.alwaysOn) - Number(a.alwaysOn))
+    for (const f of ordered) {
+      lines.push(`| ${f.relPath} | ${fmt(f.tokens)} | ${f.alwaysOn ? "always" : "on-demand"} |`)
     }
-    lines.push(`| **Total** | **${fmt(budget.totalEstimatedTokens)}** |`, "")
+    lines.push(`| **Total** | **${fmt(budget.totalEstimatedTokens)}** | |`, "")
   }
 
-  const errors = findings.filter((f) => f.level === "ERROR")
-  const warns = findings.filter((f) => f.level === "WARN")
-  const infos = findings.filter((f) => f.level === "INFO")
-
-  if (errors.length > 0) {
-    lines.push("## Errors (fix before next session)", "")
-    for (const f of errors) lines.push(`- ❌ ${msg(f)}`)
-    lines.push("")
-  }
-  if (warns.length > 0) {
-    lines.push("## Warnings", "")
-    for (const f of warns) lines.push(`- ⚠️  ${msg(f)}`)
-    lines.push("")
-  }
-  if (infos.length > 0) {
-    lines.push("## Notices", "")
-    for (const f of infos) lines.push(`- ℹ️  ${msg(f)}`)
+  const sections: { level: Finding["level"]; heading: string; prefix: string }[] = [
+    { level: "ERROR", heading: "Errors (fix before next session)", prefix: "- ❌ " },
+    { level: "WARN", heading: "Warnings", prefix: "- ⚠️  " },
+    { level: "INFO", heading: "Notices", prefix: "- ℹ️  " },
+  ]
+  for (const { level, heading, prefix } of sections) {
+    const group = findings.filter((f) => f.level === level)
+    if (group.length === 0) continue
+    lines.push(`## ${heading}`, "")
+    for (const f of group) lines.push(`${prefix}${msg(f)}`)
     lines.push("")
   }
   if (findings.length === 0) {

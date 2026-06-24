@@ -10,6 +10,7 @@ test("an empty project scores a perfect 100 / A", () => {
   assert.deepEqual(score.dimensions, {
     security: 100,
     structure: 100,
+    efficiency: 100,
     maintainability: 100,
     validity: 100,
   })
@@ -48,4 +49,15 @@ test("findings without a category fall back to maintainability", () => {
 test("grade thresholds map correctly", () => {
   // 4 ERRORs in validity → validity 0; overall = round(100*.35+100*.25+100*.25+0*.15)=85 → B
   assert.equal(computeScore(Array.from({ length: 4 }, () => ({ level: "ERROR" as const, message: "x", category: "validity" as const }))).grade, "B")
+})
+
+test("heavy damage across most dimensions drops to a failing grade", () => {
+  const cats = ["security", "structure", "efficiency", "maintainability"] as const
+  const findings: Finding[] = cats.flatMap((category) =>
+    Array.from({ length: 4 }, () => ({ level: "ERROR" as const, message: "x", category })),
+  )
+  const score = computeScore(findings)
+  // those four dimensions → 0, only validity (weight .15) survives at 100 → overall 15
+  assert.equal(score.overall, 15)
+  assert.equal(score.grade, "F")
 })

@@ -7,11 +7,13 @@ const PENALTY: Record<Finding["level"], number> = {
   INFO: 2,
 }
 
-// Weight of each dimension in the overall score (must sum to 1).
+// Weight of each dimension in the overall score (must sum to 1). Key order
+// also determines display order in the report.
 const WEIGHT: Record<Category, number> = {
-  security: 0.35,
-  structure: 0.25,
-  maintainability: 0.25,
+  security: 0.3,
+  structure: 0.2,
+  efficiency: 0.2,
+  maintainability: 0.15,
   validity: 0.15,
 }
 
