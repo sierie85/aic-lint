@@ -1,8 +1,10 @@
 import type { ContextBudget, ProjectConfig } from "./types.js"
 import { markdownFiles } from "./collect.js"
 
-// Rough local estimate — Anthropic does not publish an offline tokenizer
-// for Claude 3/4. Blend of a character- and word-based heuristic.
+// Local, dependency-free token estimate. Blends a character-based
+// (~chars/4, close to real BPE tokenization for English prose) and a
+// word-based heuristic. Good enough for a rough context-budget figure;
+// exact counts would require a model-specific tokenizer or an API call.
 export function estimateTokens(text: string): number {
   if (text.length === 0) return 0
   const trimmed = text.trim()

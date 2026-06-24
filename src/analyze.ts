@@ -8,6 +8,22 @@ import { extractFileRefs, extractH2Headings, stripCodeFences } from "./markdown.
 
 export type FileExists = (absPath: string) => boolean
 
+// CLAUDE.md is loaded into context on every session, so longer files cost more.
+const CLAUDE_MD_WARN_LINES = 80
+const CLAUDE_MD_ERROR_LINES = 150
+// A CLAUDE.md shorter than this is too small to need ## sections.
+const STRUCTURE_MIN_LINES = 20
+// Skills shorter than this are too small to judge for quality.
+const SKILL_MIN_LINES = 10
+// Two skills sharing at least this many ## headings probably overlap.
+const OVERLAP_MIN_SHARED = 2
+// A duplicated line must be at least this long to count as redundancy.
+const REDUNDANCY_MIN_LEN = 40
+
+function finding(level: Finding["level"], message: string): Finding {
+  return { level, message }
+}
+
 export function checkAiConfigPresence(config: ProjectConfig): Finding[] {
   const hasAny =
     config.claudeMdFiles.length > 0 ||
@@ -15,58 +31,44 @@ export function checkAiConfigPresence(config: ProjectConfig): Finding[] {
     config.agentsOverrideMd !== null ||
     config.codexAgentsMd !== null ||
     config.geminiMd !== null
-  if (!hasAny) {
-    return [{ level: "WARN", message: "No AI config files found (CLAUDE.md, AGENTS.md, GEMINI.md)" }]
-  }
-  return []
+  return hasAny
+    ? []
+    : [finding("WARN", "No AI config files found (CLAUDE.md, AGENTS.md, GEMINI.md)")]
 }
 
 export function checkClaudeMdLength(config: ProjectConfig): Finding[] {
-  const findings: Finding[] = []
-  for (const f of config.claudeMdFiles) {
-    if (f.lineCount > 150) {
-      findings.push({ level: "ERROR", message: `${f.relPath}: ${f.lineCount} lines (recommended: < 80)` })
-    } else if (f.lineCount > 80) {
-      findings.push({ level: "WARN", message: `${f.relPath}: ${f.lineCount} lines (recommended: < 80)` })
-    }
-  }
-  return findings
+  return config.claudeMdFiles.flatMap((file) => {
+    const note = `${file.relPath}: ${file.lineCount} lines (recommended: < ${CLAUDE_MD_WARN_LINES})`
+    if (file.lineCount > CLAUDE_MD_ERROR_LINES) return [finding("ERROR", note)]
+    if (file.lineCount > CLAUDE_MD_WARN_LINES) return [finding("WARN", note)]
+    return []
+  })
 }
 
 export function checkDeadRefs(config: ProjectConfig, fileExists: FileExists = existsSync): Finding[] {
-  const findings: Finding[] = []
-  for (const file of markdownFiles(config)) {
-    for (const ref of extractFileRefs(file.content)) {
-      if (!fileExists(join(config.root, ref))) {
-        findings.push({ level: "ERROR", message: `Dead path in ${file.relPath}: \`${ref}\`` })
-      }
-    }
-  }
-  return findings
+  return markdownFiles(config).flatMap((file) =>
+    extractFileRefs(file.content)
+      .filter((ref) => !fileExists(join(config.root, ref)))
+      .map((ref) => finding("ERROR", `Dead path in ${file.relPath}: \`${ref}\``)),
+  )
 }
 
-
 export function checkClaudeMdStructure(config: ProjectConfig): Finding[] {
-  const findings: Finding[] = []
-  for (const f of config.claudeMdFiles) {
-    if (f.lineCount > 20 && !/^## /m.test(f.content)) {
-      findings.push({ level: "WARN", message: `${f.relPath}: unstructured content (no ## section)` })
-    }
-  }
-  return findings
+  return config.claudeMdFiles
+    .filter((file) => file.lineCount > STRUCTURE_MIN_LINES && !/^## /m.test(file.content))
+    .map((file) => finding("WARN", `${file.relPath}: unstructured content (no ## section)`))
 }
 
 export function checkSkillQuality(config: ProjectConfig): Finding[] {
-  const findings: Finding[] = []
-  for (const skill of config.skills) {
-    const hasH1 = /^# .+/m.test(skill.content)
-    const prose = stripCodeFences(skill.content).replace(/`[^`]+`/g, "")
-    const proseLines = prose.split("\n").filter((l) => l.trim() && !l.startsWith("#"))
-    if (skill.lineCount > 10 && (!hasH1 || proseLines.length < 2)) {
-      findings.push({ level: "WARN", message: `Skill ${skill.relPath}: no title or no descriptive text` })
-    }
-  }
-  return findings
+  return config.skills
+    .filter((skill) => {
+      if (skill.lineCount <= SKILL_MIN_LINES) return false
+      const hasH1 = /^# .+/m.test(skill.content)
+      const prose = stripCodeFences(skill.content).replace(/`[^`]+`/g, "")
+      const proseLines = prose.split("\n").filter((l) => l.trim() && !l.startsWith("#"))
+      return !hasH1 || proseLines.length < 2
+    })
+    .map((skill) => finding("WARN", `Skill ${skill.relPath}: no title or no descriptive text`))
 }
 
 export function checkSkillOverlap(config: ProjectConfig): Finding[] {
@@ -75,12 +77,10 @@ export function checkSkillOverlap(config: ProjectConfig): Finding[] {
   for (let i = 0; i < config.skills.length; i++) {
     for (let j = i + 1; j < config.skills.length; j++) {
       const shared = [...headings[i]].filter((h) => headings[j].has(h))
-      if (shared.length >= 2) {
+      if (shared.length >= OVERLAP_MIN_SHARED) {
         const sections = shared.sort().map((h) => `"${h}"`).join(", ")
-        findings.push({
-          level: "WARN",
-          message: `Skill overlap: ${config.skills[i].relPath} + ${config.skills[j].relPath} share: ${sections}`,
-        })
+        const where = `${config.skills[i].relPath} + ${config.skills[j].relPath}`
+        findings.push(finding("WARN", `Skill overlap: ${where} share: ${sections}`))
       }
     }
   }
@@ -88,8 +88,8 @@ export function checkSkillOverlap(config: ProjectConfig): Finding[] {
 }
 
 export function checkRedundancy(config: ProjectConfig): Finding[] {
-  const MIN_LEN = 40
-  const seen = new Map<string, Set<string>>()
+  // Map each normalized content line to the set of files it appears in.
+  const filesByLine = new Map<string, Set<string>>()
   for (const file of [...config.claudeMdFiles, ...config.skills]) {
     let inFence = false
     for (const raw of file.content.split("\n")) {
@@ -100,19 +100,18 @@ export function checkRedundancy(config: ProjectConfig): Finding[] {
       }
       if (inFence || line.startsWith("#")) continue
       const norm = line.toLowerCase().replace(/\s+/g, " ")
-      if (norm.length < MIN_LEN) continue
-      if (!seen.has(norm)) seen.set(norm, new Set())
-      seen.get(norm)!.add(file.relPath)
+      if (norm.length < REDUNDANCY_MIN_LEN) continue
+      if (!filesByLine.has(norm)) filesByLine.set(norm, new Set())
+      filesByLine.get(norm)!.add(file.relPath)
     }
   }
 
   const findings: Finding[] = []
-  for (const [norm, paths] of seen) {
-    if (paths.size >= 2) {
-      const where = [...paths].sort().join(" + ")
-      const preview = norm.length > 60 ? `${norm.slice(0, 60)}…` : norm
-      findings.push({ level: "WARN", message: `Redundancy in ${where}: "${preview}"` })
-    }
+  for (const [norm, paths] of filesByLine) {
+    if (paths.size < 2) continue
+    const where = [...paths].sort().join(" + ")
+    const preview = norm.length > 60 ? `${norm.slice(0, 60)}…` : norm
+    findings.push(finding("WARN", `Redundancy in ${where}: "${preview}"`))
   }
   return findings
 }
@@ -120,28 +119,28 @@ export function checkRedundancy(config: ProjectConfig): Finding[] {
 export function checkFrontmatter(config: ProjectConfig): Finding[] {
   const findings: Finding[] = []
 
-  for (const s of config.skills) {
-    const fm = parseFrontmatter(s.content)
+  for (const skill of config.skills) {
+    const fm = parseFrontmatter(skill.content)
     if (fm.present && !fm.valid) {
-      findings.push({ level: "WARN", message: `${s.relPath}: frontmatter not closed (--- missing)` })
+      findings.push(finding("WARN", `${skill.relPath}: frontmatter not closed (--- missing)`))
     } else if (fm.present && fm.valid && !fm.fields.description) {
-      findings.push({ level: "INFO", message: `${s.relPath}: frontmatter without 'description'` })
+      findings.push(finding("INFO", `${skill.relPath}: frontmatter without 'description'`))
     }
   }
 
-  for (const a of config.agents) {
-    const fm = parseFrontmatter(a.content)
+  for (const agent of config.agents) {
+    const fm = parseFrontmatter(agent.content)
     if (!fm.present) {
-      findings.push({ level: "WARN", message: `${a.relPath}: agent without frontmatter (name/description required)` })
+      findings.push(finding("WARN", `${agent.relPath}: agent without frontmatter (name/description required)`))
       continue
     }
     if (!fm.valid) {
-      findings.push({ level: "WARN", message: `${a.relPath}: frontmatter not closed (--- missing)` })
+      findings.push(finding("WARN", `${agent.relPath}: frontmatter not closed (--- missing)`))
       continue
     }
     for (const key of ["name", "description"]) {
       if (!fm.fields[key]) {
-        findings.push({ level: "WARN", message: `${a.relPath}: agent frontmatter without '${key}'` })
+        findings.push(finding("WARN", `${agent.relPath}: agent frontmatter without '${key}'`))
       }
     }
   }
@@ -150,38 +149,38 @@ export function checkFrontmatter(config: ProjectConfig): Finding[] {
 }
 
 export function checkJsonConfigs(config: ProjectConfig): Finding[] {
-  const findings: Finding[] = []
-  for (const f of config.jsonConfigs) {
+  return config.jsonConfigs.flatMap((file) => {
     try {
-      JSON.parse(f.content)
+      JSON.parse(file.content)
+      return []
     } catch (e) {
-      findings.push({ level: "ERROR", message: `${f.relPath}: invalid JSON (${(e as Error).message})` })
+      return [finding("ERROR", `${file.relPath}: invalid JSON (${(e as Error).message})`)]
     }
-  }
-  return findings
+  })
 }
 
 export function checkSecrets(config: ProjectConfig): Finding[] {
-  const findings: Finding[] = []
-  for (const file of allFiles(config)) {
-    for (const m of scanSecrets(file.content)) {
-      findings.push({ level: "ERROR", message: `Possible secret in ${file.relPath}: ${m.kind} (${m.snippet})` })
-    }
-  }
-  return findings
+  return allFiles(config).flatMap((file) =>
+    scanSecrets(file.content).map((m) =>
+      finding("ERROR", `Possible secret in ${file.relPath}: ${m.kind} (${m.snippet})`),
+    ),
+  )
 }
 
+// The full check suite, in report order. Add or remove a check here.
+const CHECKS: ((config: ProjectConfig, fileExists: FileExists) => Finding[])[] = [
+  checkAiConfigPresence,
+  checkClaudeMdLength,
+  checkDeadRefs,
+  checkClaudeMdStructure,
+  checkSkillQuality,
+  checkSkillOverlap,
+  checkRedundancy,
+  checkFrontmatter,
+  checkJsonConfigs,
+  checkSecrets,
+]
+
 export function analyze(config: ProjectConfig, fileExists: FileExists = existsSync): Finding[] {
-  return [
-    ...checkAiConfigPresence(config),
-    ...checkClaudeMdLength(config),
-    ...checkDeadRefs(config, fileExists),
-    ...checkClaudeMdStructure(config),
-    ...checkSkillQuality(config),
-    ...checkSkillOverlap(config),
-    ...checkRedundancy(config),
-    ...checkFrontmatter(config),
-    ...checkJsonConfigs(config),
-    ...checkSecrets(config),
-  ]
+  return CHECKS.flatMap((check) => check(config, fileExists))
 }

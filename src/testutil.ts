@@ -2,7 +2,6 @@ import type { ConfigFile, ProjectConfig } from "./types.js"
 
 export function cf(relPath: string, content: string): ConfigFile {
   return {
-    path: relPath,
     relPath,
     content,
     lineCount: content.split("\n").length,

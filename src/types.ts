@@ -1,5 +1,4 @@
 export interface ConfigFile {
-  path: string
   relPath: string
   content: string
   lineCount: number
