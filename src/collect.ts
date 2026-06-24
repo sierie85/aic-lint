@@ -66,7 +66,9 @@ export function collect(root: string): ProjectConfig {
     .filter((p) => existsSync(p))
     .map((p) => readConfigFile(p, root))
 
-  return { root, claudeMdFiles, skills, agents, agentsMd, agentsOverrideMd, codexAgentsMd, geminiMd, aiDocs, jsonConfigs }
+  const gitignore = readFileIfExists(join(root, ".gitignore"), root)
+
+  return { root, claudeMdFiles, skills, agents, agentsMd, agentsOverrideMd, codexAgentsMd, geminiMd, aiDocs, jsonConfigs, gitignore }
 }
 
 // All prose/Markdown files — relevant for checks that parse content

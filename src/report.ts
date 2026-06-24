@@ -4,6 +4,10 @@ function fmt(n: number): string {
   return n.toLocaleString("en-US")
 }
 
+function msg(f: Finding): string {
+  return f.fix ? `${f.message} — auto-fixable (run --fix)` : f.message
+}
+
 export function generateReport(
   root: string,
   findings: Finding[],
@@ -34,17 +38,17 @@ export function generateReport(
 
   if (errors.length > 0) {
     lines.push("## Errors (fix before next session)", "")
-    for (const f of errors) lines.push(`- ❌ ${f.message}`)
+    for (const f of errors) lines.push(`- ❌ ${msg(f)}`)
     lines.push("")
   }
   if (warns.length > 0) {
     lines.push("## Warnings", "")
-    for (const f of warns) lines.push(`- ⚠️  ${f.message}`)
+    for (const f of warns) lines.push(`- ⚠️  ${msg(f)}`)
     lines.push("")
   }
   if (infos.length > 0) {
     lines.push("## Notices", "")
-    for (const f of infos) lines.push(`- ℹ️  ${f.message}`)
+    for (const f of infos) lines.push(`- ℹ️  ${msg(f)}`)
     lines.push("")
   }
   if (findings.length === 0) {

@@ -20,6 +20,7 @@ export function makeConfig(overrides: Partial<ProjectConfig> = {}): ProjectConfi
     geminiMd: null,
     aiDocs: [],
     jsonConfigs: [],
+    gitignore: null,
     ...overrides,
   }
 }

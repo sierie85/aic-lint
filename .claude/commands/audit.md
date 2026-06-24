@@ -6,12 +6,14 @@ project. No API access, no network, no API key required.
 ## Usage
 
 ```
-/audit [--no-budget] [--json]
+/audit [--no-budget] [--json] [--fix] [--fix-dry-run]
 ```
 
 - No flags: all checks + context budget (local estimate)
 - `--no-budget`: omit the context-budget table
 - `--json`: machine-readable JSON output (for CI)
+- `--fix`: apply safe auto-fixes in place (frontmatter, .gitignore)
+- `--fix-dry-run`: preview what --fix would change, without writing
 
 ## What gets checked
 
@@ -21,6 +23,7 @@ project. No API access, no network, no API key required.
 - **Agents** (`.claude/agents/*.md`) — frontmatter (name/description)
 - **Redundancy** — same content line in CLAUDE.md and a skill (local, no LLM)
 - **JSON configs** (`settings.json`, `settings.local.json`, `.mcp.json`) — valid JSON
+- **Gitignore safety** — .env / .claude/settings.local.json must be gitignored
 - **Secret scan** — accidentally committed API keys/tokens
 - **Context budget** — rough local token estimate per file
 

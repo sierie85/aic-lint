@@ -1,9 +1,10 @@
 import { existsSync } from "fs"
-import { join } from "path"
-import type { Finding, ProjectConfig } from "./types.js"
+import { basename, join } from "path"
+import type { Finding, Fix, ProjectConfig } from "./types.js"
 import { allFiles, markdownFiles } from "./collect.js"
 import { parseFrontmatter } from "./frontmatter.js"
 import { scanSecrets } from "./secrets.js"
+import { appendLine, insertFrontmatterField, prependFrontmatter } from "./fix.js"
 import { extractFileRefs, extractH2Headings, stripCodeFences } from "./markdown.js"
 
 export type FileExists = (absPath: string) => boolean
@@ -19,9 +20,11 @@ const SKILL_MIN_LINES = 10
 const OVERLAP_MIN_SHARED = 2
 // A duplicated line must be at least this long to count as redundancy.
 const REDUNDANCY_MIN_LEN = 40
+// Sensitive files that should never be committed if they exist.
+const GITIGNORE_SENSITIVE = [".env", ".claude/settings.local.json"]
 
-function finding(level: Finding["level"], message: string): Finding {
-  return { level, message }
+function finding(level: Finding["level"], message: string, fix?: Fix): Finding {
+  return fix ? { level, message, fix } : { level, message }
 }
 
 export function checkAiConfigPresence(config: ProjectConfig): Finding[] {
@@ -124,14 +127,22 @@ export function checkFrontmatter(config: ProjectConfig): Finding[] {
     if (fm.present && !fm.valid) {
       findings.push(finding("WARN", `${skill.relPath}: frontmatter not closed (--- missing)`))
     } else if (fm.present && fm.valid && !fm.fields.description) {
-      findings.push(finding("INFO", `${skill.relPath}: frontmatter without 'description'`))
+      findings.push(finding("INFO", `${skill.relPath}: frontmatter without 'description'`, {
+        relPath: skill.relPath,
+        description: `Add a placeholder 'description' to ${skill.relPath}`,
+        apply: (c) => insertFrontmatterField(c, "description", "TODO: describe this command"),
+      }))
     }
   }
 
   for (const agent of config.agents) {
     const fm = parseFrontmatter(agent.content)
     if (!fm.present) {
-      findings.push(finding("WARN", `${agent.relPath}: agent without frontmatter (name/description required)`))
+      findings.push(finding("WARN", `${agent.relPath}: agent without frontmatter (name/description required)`, {
+        relPath: agent.relPath,
+        description: `Scaffold frontmatter in ${agent.relPath}`,
+        apply: (c) => prependFrontmatter(c, { name: basename(agent.relPath, ".md"), description: "TODO: describe this agent" }),
+      }))
       continue
     }
     if (!fm.valid) {
@@ -140,7 +151,12 @@ export function checkFrontmatter(config: ProjectConfig): Finding[] {
     }
     for (const key of ["name", "description"]) {
       if (!fm.fields[key]) {
-        findings.push(finding("WARN", `${agent.relPath}: agent frontmatter without '${key}'`))
+        const value = key === "name" ? basename(agent.relPath, ".md") : "TODO: describe this agent"
+        findings.push(finding("WARN", `${agent.relPath}: agent frontmatter without '${key}'`, {
+          relPath: agent.relPath,
+          description: `Add '${key}' to frontmatter in ${agent.relPath}`,
+          apply: (c) => insertFrontmatterField(c, key, value),
+        }))
       }
     }
   }
@@ -157,6 +173,27 @@ export function checkJsonConfigs(config: ProjectConfig): Finding[] {
       return [finding("ERROR", `${file.relPath}: invalid JSON (${(e as Error).message})`)]
     }
   })
+}
+
+function isGitignored(entry: string, patterns: Set<string>): boolean {
+  if (patterns.has(entry) || patterns.has(`/${entry}`)) return true
+  const base = entry.split("/").pop()!
+  return patterns.has(base) || patterns.has(`/${base}`)
+}
+
+export function checkGitignore(config: ProjectConfig, fileExists: FileExists = existsSync): Finding[] {
+  const patterns = new Set(
+    (config.gitignore?.content ?? "").split("\n").map((l) => l.trim()).filter(Boolean),
+  )
+  return GITIGNORE_SENSITIVE
+    .filter((entry) => fileExists(join(config.root, entry)) && !isGitignored(entry, patterns))
+    .map((entry) =>
+      finding("WARN", `${entry} exists but is not in .gitignore`, {
+        relPath: ".gitignore",
+        description: `Add ${entry} to .gitignore`,
+        apply: (c) => appendLine(c, entry),
+      }),
+    )
 }
 
 export function checkSecrets(config: ProjectConfig): Finding[] {
@@ -178,6 +215,7 @@ const CHECKS: ((config: ProjectConfig, fileExists: FileExists) => Finding[])[] =
   checkRedundancy,
   checkFrontmatter,
   checkJsonConfigs,
+  checkGitignore,
   checkSecrets,
 ]
 

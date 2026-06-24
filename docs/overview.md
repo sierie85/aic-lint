@@ -84,6 +84,18 @@ heaviest?"), not as an exact billing basis.
 - **CLI** — straight in the terminal, Markdown or `--json`
 - **`/audit` skill** — inside Claude Code
 - **CI gate** — via exit code and `--json`
+- **Auto-fix** — `--fix` applies safe, deterministic corrections in place
+  (`--fix-dry-run` previews them); see "Auto-fix" below
+
+## Auto-fix
+
+`--fix` applies only **safe, deterministic, non-destructive** corrections, in line
+with the "deterministic, no LLM" principle. Each check may attach a `Fix` to its
+finding (a pure `content => content` transform plus a target file); the applier
+groups fixes per file, chains them and writes the result (`--fix-dry-run` skips the
+write and just reports). Today that covers frontmatter scaffolding and `.gitignore`
+hygiene. Anything that needs human judgement — secrets, invalid JSON, dead
+references, oversized files, redundancy — is deliberately **never** auto-fixed.
 
 ## Scope
 

@@ -3,6 +3,11 @@
 All checks run purely locally and deterministically. Every finding has a level:
 **ERROR** (exit code 1), **WARN** or **INFO**.
 
+Some findings are **auto-fixable** — run `aic-lint . --fix` to apply safe,
+deterministic corrections in place, or `--fix-dry-run` to preview them. Only
+non-destructive fixes are applied (frontmatter scaffolding, `.gitignore` entries);
+secrets, invalid JSON and dead references are always left for a human.
+
 ## Structure & quality
 
 ### AI config present
@@ -49,12 +54,15 @@ All checks run purely locally and deterministically. Every finding has a level:
 ### Command frontmatter
 - **Level:** WARN / INFO
 - WARN: frontmatter block opened but not closed with `---`.
-- INFO: valid frontmatter without a `description`.
+- INFO: valid frontmatter without a `description`. **Auto-fixable** — `--fix` adds a
+  placeholder `description`.
 
 ### Agent frontmatter
-- **Level:** WARN
+- **Level:** WARN · **auto-fixable**
 - Warns when an agent (`.claude/agents/*.md`) has **no** frontmatter, it is not
   closed, or the `name` / `description` fields are missing.
+- `--fix` scaffolds a frontmatter block (or the missing field) with placeholder
+  values; an unclosed block is left untouched (ambiguous).
 
 ## Config validity
 
@@ -64,6 +72,12 @@ All checks run purely locally and deterministically. Every finding has a level:
   for valid JSON. A syntax error is an ERROR.
 
 ## Security
+
+### Gitignore safety
+- **Level:** WARN · **auto-fixable**
+- Warns when a sensitive file that *exists* in the project is not listed in
+  `.gitignore`. Currently checked: `.env` and `.claude/settings.local.json`.
+- `--fix` appends the missing entry to `.gitignore` (creating the file if needed).
 
 ### Secret scan
 - **Level:** ERROR
@@ -88,4 +102,5 @@ All checks run purely locally and deterministically. Every finding has a level:
 | Command frontmatter | WARN / INFO |
 | Agent frontmatter | WARN |
 | JSON configs | ERROR |
+| Gitignore safety | WARN |
 | Secret scan | ERROR |

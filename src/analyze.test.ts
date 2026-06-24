@@ -7,6 +7,7 @@ import {
   checkClaudeMdStructure,
   checkDeadRefs,
   checkFrontmatter,
+  checkGitignore,
   checkJsonConfigs,
   checkRedundancy,
   checkSecrets,
@@ -102,6 +103,33 @@ test("checkFrontmatter: command without description gives info", () => {
   const skill = cf("c.md", "---\nname: foo\n---\n# Command")
   const findings = checkFrontmatter(makeConfig({ skills: [skill] }))
   assert.equal(findings[0].level, "INFO")
+})
+
+test("checkFrontmatter attaches a frontmatter-scaffold fix for an agent without frontmatter", () => {
+  const finding = checkFrontmatter(makeConfig({ agents: [cf("helper.md", "# Agent\nprose")] }))[0]
+  assert.ok(finding.fix)
+  assert.equal(finding.fix!.relPath, "helper.md")
+  assert.match(finding.fix!.apply("# Agent\nprose"), /^---\nname: helper\ndescription: /)
+})
+
+test("checkGitignore flags an existing sensitive file that is not ignored, with a fix", () => {
+  const config = makeConfig({ root: "/proj", gitignore: cf(".gitignore", "node_modules\n") })
+  const exists = (p: string) => p.endsWith(".env")
+  const findings = checkGitignore(config, exists)
+  assert.equal(findings.length, 1)
+  assert.match(findings[0].message, /\.env exists but is not in \.gitignore/)
+  assert.equal(findings[0].fix!.relPath, ".gitignore")
+  assert.equal(findings[0].fix!.apply("node_modules\n"), "node_modules\n.env\n")
+})
+
+test("checkGitignore stays silent when the sensitive file is already ignored", () => {
+  const config = makeConfig({ root: "/proj", gitignore: cf(".gitignore", ".env\n") })
+  assert.equal(checkGitignore(config, (p) => p.endsWith(".env")).length, 0)
+})
+
+test("checkGitignore stays silent when the sensitive file does not exist", () => {
+  const config = makeConfig({ root: "/proj", gitignore: cf(".gitignore", "") })
+  assert.equal(checkGitignore(config, () => false).length, 0)
 })
 
 test("checkJsonConfigs flags invalid JSON", () => {
