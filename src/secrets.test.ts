@@ -19,6 +19,23 @@ test("detects private key headers", () => {
   assert.equal(scanSecrets("-----BEGIN OPENSSH PRIVATE KEY-----")[0].kind, "Private Key")
 })
 
+test("detects additional provider tokens", () => {
+  assert.equal(scanSecrets(`stripe sk_live_${"a".repeat(24)}`)[0].kind, "Stripe Secret Key")
+  assert.equal(scanSecrets(`npm_${"a".repeat(36)}`)[0].kind, "npm Token")
+  assert.equal(scanSecrets(`glpat-${"a".repeat(20)}`)[0].kind, "GitLab PAT")
+  assert.equal(scanSecrets(`hf_${"a".repeat(34)}`)[0].kind, "Hugging Face Token")
+})
+
+test("redacts the new tokens too", () => {
+  const m = scanSecrets(`sk_live_${"a".repeat(24)}`)[0]
+  assert.match(m.snippet, /…/)
+})
+
+test("does not flag near-misses (too short)", () => {
+  assert.deepEqual(scanSecrets("sk_live_short"), [])
+  assert.deepEqual(scanSecrets("npm_tooshort"), [])
+})
+
 test("returns nothing for clean text", () => {
-  assert.deepEqual(scanSecrets("ganz normaler Text ohne Geheimnisse"), [])
+  assert.deepEqual(scanSecrets("just some ordinary text without secrets"), [])
 })

@@ -1,7 +1,9 @@
 # Check reference
 
 All checks run purely locally and deterministically. Every finding has a level:
-**ERROR** (exit code 1), **WARN** or **INFO**.
+**ERROR** (exit code 1), **WARN** or **INFO**. The report also opens with a **0–100
+score** per dimension (structure / maintainability / validity / security) plus a
+letter grade — see [overview.md](overview.md#score).
 
 Some findings are **auto-fixable** — run `aic-lint . --fix` to apply safe,
 deterministic corrections in place, or `--fix-dry-run` to preview them. Only
@@ -83,8 +85,12 @@ secrets, invalid JSON and dead references are always left for a human.
 - **Level:** ERROR
 - Scans all collected files for patterns that look like real secrets. Matches are
   **redacted** in the output (e.g. `sk-a…yz`).
-- Detected types: Anthropic, OpenAI, AWS, GitHub, Slack, Google keys as well as
-  private-key headers (`-----BEGIN ... PRIVATE KEY-----`).
+- Detected types (~24): Anthropic, OpenAI, AWS (incl. temporary `ASIA`), GitHub
+  token/PAT, GitLab PAT, Slack token/webhook, Google, Stripe (secret/restricted),
+  Twilio, SendGrid, Mailgun, npm, PyPI, DigitalOcean, Square, Shopify, Telegram bot,
+  Hugging Face, Notion, plus private-key headers (`-----BEGIN ... PRIVATE KEY-----`).
+- Only prefix-specific patterns are used (no generic JWT/high-entropy matching) to
+  keep false positives low.
 
 ---
 

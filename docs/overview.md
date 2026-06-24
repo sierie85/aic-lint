@@ -87,6 +87,15 @@ heaviest?"), not as an exact billing basis.
 - **Auto-fix** — `--fix` applies safe, deterministic corrections in place
   (`--fix-dry-run` previews them); see "Auto-fix" below
 
+## Score
+
+The report opens with a **0–100 score** and a letter grade (A–F), computed locally
+and deterministically — no LLM, no network. Each check contributes to one of four
+dimensions: **structure**, **maintainability**, **validity** and **security**. A
+dimension starts at 100 and loses points per finding (ERROR > WARN > INFO), and the
+overall score is a weighted average (security weighted highest). The numbers are a
+relative health signal, not an absolute audit grade.
+
 ## Auto-fix
 
 `--fix` applies only **safe, deterministic, non-destructive** corrections, in line

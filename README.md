@@ -15,9 +15,12 @@ Supports: **Claude Code**, **Codex CLI**, **Gemini CLI** and any tool built on
 ## Highlights
 
 - **Deterministic** — no LLM calls, same input → same result
+- **Scored** — a local 0–100 score (A–F) across four dimensions, no API needed
+- **Auto-fix** — `--fix` applies safe corrections (frontmatter, `.gitignore`)
 - **Zero runtime dependencies** — only `tsx` + `typescript` as dev tools
 - **CI-friendly** — `--json` output and meaningful exit codes
 - **Multi-tool** — detects `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `docs/ai/` and more
+- **Secret scan** — ~24 prefix-specific token patterns, redacted in output
 
 ---
 
