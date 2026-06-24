@@ -3,6 +3,7 @@ import { collect } from "./collect.js"
 import { buildContextBudget } from "./estimate.js"
 import { generateReport } from "./report.js"
 import { computeScore } from "./score.js"
+import { loadSettings } from "./settings.js"
 import type { ContextBudget, Finding, Score } from "./types.js"
 
 export interface RunOptions {
@@ -19,7 +20,8 @@ export interface AuditResult {
 
 export function runAudit(projectRoot: string, options: RunOptions = {}): AuditResult {
   const config = collect(projectRoot)
-  const findings = analyze(config)
+  const settings = loadSettings(projectRoot)
+  const findings = analyze(config, undefined, settings)
   const score = computeScore(findings)
   const budget = options.noBudget ? undefined : buildContextBudget(config)
   const hasErrors = findings.some((f) => f.level === "ERROR")

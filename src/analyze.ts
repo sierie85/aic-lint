@@ -7,12 +7,10 @@ import { scanSecrets } from "./secrets.js"
 import { estimateTokens } from "./estimate.js"
 import { appendLine, insertFrontmatterField, prependFrontmatter } from "./fix.js"
 import { extractFileRefs, extractH2Headings, stripCodeFences } from "./markdown.js"
+import { DEFAULT_SETTINGS, DEFAULT_THRESHOLDS, type Settings, type Thresholds } from "./settings.js"
 
 export type FileExists = (absPath: string) => boolean
 
-// CLAUDE.md is loaded into context on every session, so longer files cost more.
-const CLAUDE_MD_WARN_LINES = 80
-const CLAUDE_MD_ERROR_LINES = 150
 // A CLAUDE.md shorter than this is too small to need ## sections.
 const STRUCTURE_MIN_LINES = 20
 // Skills shorter than this are too small to judge for quality.
@@ -23,9 +21,6 @@ const OVERLAP_MIN_SHARED = 2
 const REDUNDANCY_MIN_LEN = 40
 // Sensitive files that should never be committed if they exist.
 const GITIGNORE_SENSITIVE = [".env", ".claude/settings.local.json"]
-// Recommended ceiling for always-on context (loaded every session).
-const ALWAYS_ON_WARN_TOKENS = 8000
-const ALWAYS_ON_ERROR_TOKENS = 16000
 
 function finding(level: Finding["level"], message: string, fix?: Fix): Finding {
   return fix ? { level, message, fix } : { level, message }
@@ -44,11 +39,15 @@ export function checkAiConfigPresence(config: ProjectConfig): Finding[] {
     : [finding("WARN", "No AI config files found (CLAUDE.md, AGENTS.md, GEMINI.md, .cursorrules)")]
 }
 
-export function checkClaudeMdLength(config: ProjectConfig): Finding[] {
+export function checkClaudeMdLength(
+  config: ProjectConfig,
+  _fileExists: FileExists = existsSync,
+  thresholds: Thresholds = DEFAULT_THRESHOLDS,
+): Finding[] {
   return config.claudeMdFiles.flatMap((file) => {
-    const note = `${file.relPath}: ${file.lineCount} lines, ~${estimateTokens(file.content)} tokens (recommended: < ${CLAUDE_MD_WARN_LINES} lines)`
-    if (file.lineCount > CLAUDE_MD_ERROR_LINES) return [finding("ERROR", note)]
-    if (file.lineCount > CLAUDE_MD_WARN_LINES) return [finding("WARN", note)]
+    const note = `${file.relPath}: ${file.lineCount} lines, ~${estimateTokens(file.content)} tokens (recommended: < ${thresholds.claudeMdWarnLines} lines)`
+    if (file.lineCount > thresholds.claudeMdErrorLines) return [finding("ERROR", note)]
+    if (file.lineCount > thresholds.claudeMdWarnLines) return [finding("WARN", note)]
     return []
   })
 }
@@ -208,15 +207,19 @@ export function checkGitignore(config: ProjectConfig, fileExists: FileExists = e
     )
 }
 
-export function checkContextBudget(config: ProjectConfig): Finding[] {
+export function checkContextBudget(
+  config: ProjectConfig,
+  _fileExists: FileExists = existsSync,
+  thresholds: Thresholds = DEFAULT_THRESHOLDS,
+): Finding[] {
   const alwaysOn = alwaysOnFiles(config).map((f) => ({ relPath: f.relPath, tokens: estimateTokens(f.content) }))
   const total = alwaysOn.reduce((a, f) => a + f.tokens, 0)
-  if (total <= ALWAYS_ON_WARN_TOKENS) return []
+  if (total <= thresholds.alwaysOnWarnTokens) return []
 
   const heaviest = alwaysOn.reduce((a, b) => (b.tokens > a.tokens ? b : a))
   const hint = `loaded every session — consider moving detail into on-demand skills/docs (heaviest: ${heaviest.relPath} ~${heaviest.tokens} tokens)`
-  const level = total > ALWAYS_ON_ERROR_TOKENS ? "ERROR" : "WARN"
-  return [finding(level, `Always-on context ~${total} tokens exceeds the recommended ${ALWAYS_ON_WARN_TOKENS} (${hint})`)]
+  const level = total > thresholds.alwaysOnErrorTokens ? "ERROR" : "WARN"
+  return [finding(level, `Always-on context ~${total} tokens exceeds the recommended ${thresholds.alwaysOnWarnTokens} (${hint})`)]
 }
 
 export function checkSecrets(config: ProjectConfig): Finding[] {
@@ -228,29 +231,46 @@ export function checkSecrets(config: ProjectConfig): Finding[] {
 }
 
 interface CheckEntry {
-  check: (config: ProjectConfig, fileExists: FileExists) => Finding[]
+  id: string
+  check: (config: ProjectConfig, fileExists: FileExists, thresholds: Thresholds) => Finding[]
   category: Category
 }
 
-// The full check suite, in report order. Each check is tagged with the score
-// dimension it contributes to. Add or remove a check here.
+// The full check suite, in report order. Each check has a stable `id` (used in
+// .aiclintrc.json) and is tagged with the score dimension it contributes to.
 const CHECKS: CheckEntry[] = [
-  { check: checkAiConfigPresence, category: "structure" },
-  { check: checkClaudeMdLength, category: "efficiency" },
-  { check: checkDeadRefs, category: "maintainability" },
-  { check: checkClaudeMdStructure, category: "structure" },
-  { check: checkSkillQuality, category: "structure" },
-  { check: checkSkillOverlap, category: "maintainability" },
-  { check: checkRedundancy, category: "efficiency" },
-  { check: checkContextBudget, category: "efficiency" },
-  { check: checkFrontmatter, category: "structure" },
-  { check: checkJsonConfigs, category: "validity" },
-  { check: checkGitignore, category: "security" },
-  { check: checkSecrets, category: "security" },
+  { id: "ai-config-presence", check: checkAiConfigPresence, category: "structure" },
+  { id: "claude-md-length", check: checkClaudeMdLength, category: "efficiency" },
+  { id: "dead-references", check: checkDeadRefs, category: "maintainability" },
+  { id: "claude-md-structure", check: checkClaudeMdStructure, category: "structure" },
+  { id: "skill-quality", check: checkSkillQuality, category: "structure" },
+  { id: "skill-overlap", check: checkSkillOverlap, category: "maintainability" },
+  { id: "redundancy", check: checkRedundancy, category: "efficiency" },
+  { id: "context-budget", check: checkContextBudget, category: "efficiency" },
+  { id: "frontmatter", check: checkFrontmatter, category: "structure" },
+  { id: "json-configs", check: checkJsonConfigs, category: "validity" },
+  { id: "gitignore", check: checkGitignore, category: "security" },
+  { id: "secrets", check: checkSecrets, category: "security" },
 ]
 
-export function analyze(config: ProjectConfig, fileExists: FileExists = existsSync): Finding[] {
-  return CHECKS.flatMap(({ check, category }) =>
-    check(config, fileExists).map((f) => ({ ...f, category })),
-  )
+const RULE_TO_LEVEL: Record<"info" | "warn" | "error", Finding["level"]> = {
+  info: "INFO",
+  warn: "WARN",
+  error: "ERROR",
+}
+
+export function analyze(
+  config: ProjectConfig,
+  fileExists: FileExists = existsSync,
+  settings: Settings = DEFAULT_SETTINGS,
+): Finding[] {
+  return CHECKS.flatMap(({ id, check, category }) => {
+    const rule = settings.rules[id]
+    if (rule === "off") return []
+    return check(config, fileExists, settings.thresholds).map((f) => ({
+      ...f,
+      category,
+      level: rule ? RULE_TO_LEVEL[rule] : f.level,
+    }))
+  })
 }

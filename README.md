@@ -1,8 +1,15 @@
 # aic-lint
 
-A **local linter for AI coding-assistant configs** — checks `CLAUDE.md`, `AGENTS.md`,
-skills, subagents and other config files for quality, redundancy, dead references
-and accidentally committed secrets.
+**How many tokens does your AI setup burn on *every* session — and is it bloating?**
+
+`aic-lint` is a local linter for AI coding-assistant configs that answers exactly
+that. It separates your **always-on context** (loaded into the model every session)
+from on-demand context, flags when it grows too heavy, and scores the whole setup
+0–100 — all locally, no API, no LLM, deterministic.
+
+It also checks `CLAUDE.md`, `AGENTS.md`, skills, subagents and Cursor rules for
+quality, redundancy, dead references and accidentally committed secrets — and can
+auto-fix the safe ones.
 
 Supports: **Claude Code**, **Codex CLI**, **Gemini CLI**, **Cursor** and any tool
 built on `CLAUDE.md`, `AGENTS.md` or `.cursor/rules` conventions.
@@ -10,18 +17,35 @@ built on `CLAUDE.md`, `AGENTS.md` or `.cursor/rules` conventions.
 > **Fully local.** No API key, no subscription, no network.
 > Zero runtime dependencies — runs anywhere Node.js runs.
 
+```text
+## Score: 78 / 100 (C)
+
+| Dimension | Score |
+|---|---|
+| Security | 100 |
+| Structure | 100 |
+| Efficiency | 60 |   ← always-on context is over budget
+| Maintainability | 92 |
+| Validity | 100 |
+
+**Always-on context: ~11,200 tokens** — loaded every session
+On-demand context: ~4,300 tokens
+```
+
 ---
 
 ## Highlights
 
-- **Deterministic** — no LLM calls, same input → same result
-- **Token-aware** — shows your **always-on** per-session context cost and warns when it bloats
+- **Token-aware (the USP)** — shows your **always-on** per-session context cost,
+  splits it from on-demand, and warns when it bloats. No one else does this.
 - **Scored** — a local 0–100 score (A–F) across five dimensions, no API needed
+- **Deterministic** — no LLM calls, same input → same result
 - **Auto-fix** — `--fix` applies safe corrections (frontmatter, `.gitignore`)
-- **Zero runtime dependencies** — only `tsx` + `typescript` as dev tools
+- **Configurable** — `.aiclintrc.json` toggles checks, overrides severities & thresholds
 - **CI-friendly** — `--json` output and meaningful exit codes
-- **Multi-tool** — detects `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursor/rules` and more
+- **Multi-tool** — `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursor/rules` and more
 - **Secret scan** — ~24 prefix-specific token patterns, redacted in output
+- **Zero runtime dependencies** — only `tsx` + `typescript` as dev tools
 
 ---
 
@@ -125,6 +149,34 @@ CI gate example:
 ```bash
 aic-lint . --json || echo "Audit failed"
 ```
+
+---
+
+## Configuration
+
+All checks have sensible defaults. To tune them, drop a `.aiclintrc.json` in the
+project root:
+
+```json
+{
+  "rules": {
+    "redundancy": "off",
+    "dead-references": "warn"
+  },
+  "thresholds": {
+    "claudeMdWarnLines": 80,
+    "alwaysOnWarnTokens": 8000,
+    "alwaysOnErrorTokens": 16000
+  }
+}
+```
+
+- **`rules`** — per check id: `"off"` disables it, or `"info"`/`"warn"`/`"error"`
+  forces the level of its findings. Downgrading a check to `warn` keeps it visible
+  without failing CI (exit `1`).
+- **`thresholds`** — override numeric limits; unspecified keys keep their defaults.
+
+The full list of check ids and options lives in **[docs/checks.md](docs/checks.md#configuration-aiclintrcjson)**.
 
 ---
 

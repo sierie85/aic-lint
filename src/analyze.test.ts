@@ -16,6 +16,7 @@ import {
   checkSkillQuality,
 } from "./analyze.js"
 import { cf, lines, makeConfig } from "./testutil.js"
+import { DEFAULT_THRESHOLDS, type Settings } from "./settings.js"
 
 test("checkAiConfigPresence warns when no AI config files present", () => {
   assert.equal(checkAiConfigPresence(makeConfig()).length, 1)
@@ -196,6 +197,30 @@ test("analyze composes all checks in order", () => {
   const findings = analyze(config, () => true)
   const levels = findings.map((f) => f.level)
   assert.ok(levels.includes("ERROR")) // length > 150
+})
+
+test("checkContextBudget honors a custom always-on token threshold", () => {
+  // a small file is fine by default, but trips a low custom threshold
+  const config = makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "word ".repeat(200))] })
+  assert.equal(checkContextBudget(config).length, 0)
+  const thresholds = { ...DEFAULT_THRESHOLDS, alwaysOnWarnTokens: 100 }
+  assert.equal(checkContextBudget(config, undefined, thresholds)[0].level, "WARN")
+})
+
+test("analyze: a rule set to 'off' disables that check", () => {
+  const config = makeConfig({ jsonConfigs: [cf(".mcp.json", "{ broken ")] })
+  assert.ok(analyze(config, () => true).some((f) => /invalid JSON/.test(f.message)))
+  const settings: Settings = { rules: { "json-configs": "off" }, thresholds: DEFAULT_THRESHOLDS }
+  assert.equal(analyze(config, () => true, settings).some((f) => /invalid JSON/.test(f.message)), false)
+})
+
+test("analyze: a severity override downgrades a check's findings", () => {
+  const config = makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "see `src/missing.ts`")] })
+  // dead-references is ERROR by default
+  assert.equal(analyze(config, () => false)[0].level, "ERROR")
+  const settings: Settings = { rules: { "dead-references": "warn" }, thresholds: DEFAULT_THRESHOLDS }
+  const downgraded = analyze(config, () => false, settings).find((f) => /Dead path/.test(f.message))
+  assert.equal(downgraded!.level, "WARN")
 })
 
 test("analyze tags every finding with a score category", () => {

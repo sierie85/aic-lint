@@ -10,6 +10,34 @@ deterministic corrections in place, or `--fix-dry-run` to preview them. Only
 non-destructive fixes are applied (frontmatter scaffolding, `.gitignore` entries);
 secrets, invalid JSON and dead references are always left for a human.
 
+## Configuration (`.aiclintrc.json`)
+
+Drop a `.aiclintrc.json` in the project root to tune checks (optional — sensible
+defaults apply without it):
+
+```json
+{
+  "rules": {
+    "redundancy": "off",
+    "dead-references": "warn"
+  },
+  "thresholds": {
+    "claudeMdWarnLines": 80,
+    "claudeMdErrorLines": 150,
+    "alwaysOnWarnTokens": 8000,
+    "alwaysOnErrorTokens": 16000
+  }
+}
+```
+
+- **`rules`** — per check id: `"off"` disables the check, or `"info"`/`"warn"`/
+  `"error"` forces the level of all its findings (handy for CI gating — e.g.
+  downgrade `dead-references` to `warn` so it no longer fails the build).
+- **`thresholds`** — override the numeric limits; unspecified keys keep their defaults.
+- Check ids: `ai-config-presence`, `claude-md-length`, `dead-references`,
+  `claude-md-structure`, `skill-quality`, `skill-overlap`, `redundancy`,
+  `context-budget`, `frontmatter`, `json-configs`, `gitignore`, `secrets`.
+
 ## Structure & quality
 
 ### AI config present
