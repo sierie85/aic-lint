@@ -115,6 +115,15 @@ npm install -g .   # optional: install your local build globally
 A release tarball is produced with `npm pack` (which builds `dist/` first via the
 `prepack` script); `dist/` itself is **not** committed.
 
+**Releasing** is automated: push a `vX.Y.Z` tag and the
+[release workflow](.github/workflows/release.yml) builds, tests, packs and uploads
+the tarball as the release asset.
+
+```bash
+npm version patch        # bumps version + creates the git tag
+git push --follow-tags   # → GitHub Actions publishes the release with the tarball
+```
+
 ---
 
 ## Usage (CLI)
