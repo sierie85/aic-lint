@@ -53,25 +53,21 @@ On-demand context: ~4,300 tokens
 
 Requirement: **Node.js ≥ 18**.
 
-### Install (clone + global link)
+### Install (release tarball)
 
-Clone once, then install globally from the clone:
+Install globally from the latest release tarball:
 
 ```bash
-git clone https://github.com/sierie85/aic-lint ~/.aic-lint
-cd ~/.aic-lint
-npm install -g .
+npm install -g https://github.com/sierie85/aic-lint/releases/download/v0.1.0/aic-lint-0.1.0.tgz
 ```
 
-`aic-lint` is now available in every project. No build step and no extra
-dependencies — the repo ships precompiled (`dist/` is committed).
+`aic-lint` is now available in every project. To update, install a newer release
+tarball. See the [releases page](https://github.com/sierie85/aic-lint/releases) for
+the current version.
 
-> **Keep the clone.** The global install links to `~/.aic-lint`, so don't delete it.
-> To update: `cd ~/.aic-lint && git pull` — the global `aic-lint` updates automatically.
-
-> **Why not `npm i -g github:…`?** npm's *global* install from a git URL symlinks the
-> package into a temporary cache that is then deleted, leaving a broken `aic-lint`
-> command. Installing from a local clone (or an npm tarball) avoids that.
+> **Why a tarball, not `npm i -g github:…`?** npm's *global* install from a git URL
+> symlinks the package into a temporary cache that is then deleted, leaving a broken
+> `aic-lint` command. A tarball install copies the package properly and just works.
 
 Then make the `/audit` slash command available in **all** your projects at once:
 
@@ -97,11 +93,15 @@ works everywhere without copying anything. Override the detection with flags:
 ### Development
 
 ```bash
-cd ~/.aic-lint
-npm install        # dev tools (tsx, typescript) for tests/builds
+git clone https://github.com/sierie85/aic-lint && cd aic-lint
+npm install        # dev tools (tsx, typescript)
 npm test           # run the suite
-npm run build      # recompile dist/ (run before committing source changes)
+npm run build      # compile dist/ (also runs automatically on `npm pack`)
+npm install -g .   # optional: install your local build globally
 ```
+
+A release tarball is produced with `npm pack` (which builds `dist/` first via the
+`prepack` script); `dist/` itself is **not** committed.
 
 ---
 

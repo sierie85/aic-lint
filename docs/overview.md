@@ -41,8 +41,9 @@ The tool compiles to plain JavaScript (`dist/`) and runs on Node alone — `tsx`
 `typescript` are pure dev tooling. Even frontmatter parsing and secret scanning are
 implemented dependency-free. This keeps the tool small, portable and auditable.
 
-The compiled `dist/` is committed, so installing from a clone (`npm install -g .`)
-needs no build step, no `tsc`, and no dependency install at all.
+`dist/` is built on demand by the `prepack` script (so `npm pack` always ships a
+fresh, runnable build) and is not committed. The published artifact is a release
+tarball installed with `npm i -g <tarball-url>`.
 
 ### 3. Severity-based findings
 
