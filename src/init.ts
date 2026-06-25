@@ -9,7 +9,8 @@ export const CLAUDE_AUDIT_COMMAND = `# /audit — AI Config Audit
 
 Runs a full, **local** audit of the AI-assistant config files in the current
 project. No API access, no network, no API key required. The report opens with a
-0–100 score (per dimension) followed by prioritized findings.
+0–100 score, the always-on token budget with an attention ranking, and prioritized
+findings.
 
 ## Usage
 

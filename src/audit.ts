@@ -23,7 +23,7 @@ export function runAudit(projectRoot: string, options: RunOptions = {}): AuditRe
   const settings = loadSettings(projectRoot)
   const findings = analyze(config, undefined, settings)
   const score = computeScore(findings)
-  const budget = options.noBudget ? undefined : buildContextBudget(config)
+  const budget = options.noBudget ? undefined : buildContextBudget(config, settings.thresholds.alwaysOnWarnTokens)
   const hasErrors = findings.some((f) => f.level === "ERROR")
   return { projectRoot, findings, score, budget, hasErrors }
 }

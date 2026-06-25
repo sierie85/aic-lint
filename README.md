@@ -1,15 +1,18 @@
 # aic-lint
 
-**How many tokens does your AI setup burn on *every* session — and is it bloating?**
+### A local **AI context optimizer** (and config linter)
 
-`aic-lint` is a local linter for AI coding-assistant configs that answers exactly
-that. It separates your **always-on context** (loaded into the model every session)
-from on-demand context, flags when it grows too heavy, and scores the whole setup
-0–100 — all locally, no API, no LLM, deterministic.
+**How many tokens does your AI setup burn on *every* session — and which files is
+the model likely ignoring?**
 
-It also checks `CLAUDE.md`, `AGENTS.md`, skills, subagents and Cursor rules for
-quality, redundancy, dead references and accidentally committed secrets — and can
-auto-fix the safe ones.
+`aic-lint` answers exactly that. It separates your **always-on context** (loaded into
+the model every session) from on-demand context, flags when it grows too heavy, and
+**ranks your always-on files by weight and "lost in the middle" position** so you can
+see which ones risk being under-weighted — all locally, no API, no LLM, deterministic.
+
+As a side benefit it also **lints** `CLAUDE.md`, `AGENTS.md`, skills, subagents and
+Cursor rules for quality, redundancy, dead references and committed secrets — and can
+auto-fix the safe ones. Keeping configs lean *is* keeping context lean.
 
 Supports: **Claude Code**, **Codex CLI**, **Gemini CLI**, **Cursor** and any tool
 built on `CLAUDE.md`, `AGENTS.md` or `.cursor/rules` conventions.
@@ -30,14 +33,23 @@ built on `CLAUDE.md`, `AGENTS.md` or `.cursor/rules` conventions.
 
 **Always-on context: ~11,200 tokens** — loaded every session
 On-demand context: ~4,300 tokens
+
+## Always-on attention (estimate)
+
+| # | File                    | ~Tokens | Share | Position | Risk |
+|---|-------------------------|---------|-------|----------|------|
+| 1 | CLAUDE.md               | 6,100   | 54%   | top      | ok   |
+| 2 | .cursor/rules/style.mdc | 3,400   | 30%   | middle   | ⚠️ under-weighted |
+| 3 | AGENTS.md               | 1,700   | 16%   | bottom   | ok   |
 ```
 
 ---
 
 ## Highlights
 
-- **Token-aware (the USP)** — shows your **always-on** per-session context cost,
-  splits it from on-demand, and warns when it bloats. No one else does this.
+- **Context-aware (the USP)** — shows your **always-on** per-session token cost,
+  splits it from on-demand, and **ranks files by weight + "lost in the middle"
+  position** to flag context the model likely under-weights. No one else does this.
 - **Scored** — a local 0–100 score (A–F) across five dimensions, no API needed
 - **Deterministic** — no LLM calls, same input → same result
 - **Auto-fix** — `--fix` applies safe corrections (frontmatter, `.gitignore`)

@@ -37,6 +37,7 @@ test("report renders the budget with always-on split and Loaded column", () => {
     alwaysOnTokens: 1500,
     onDemandTokens: 200,
     totalEstimatedTokens: 1700,
+    attention: [],
   }
   const out = generateReport("/project", [], undefined, budget)
   assert.match(out, /## Context budget \(rough local estimate\)/)
@@ -47,9 +48,32 @@ test("report renders the budget with always-on split and Loaded column", () => {
 })
 
 test("report skips budget section when total is 0", () => {
-  const budget: ContextBudget = { files: [], alwaysOnTokens: 0, onDemandTokens: 0, totalEstimatedTokens: 0 }
+  const budget: ContextBudget = { files: [], alwaysOnTokens: 0, onDemandTokens: 0, totalEstimatedTokens: 0, attention: [] }
   const out = generateReport("/project", [], undefined, budget)
   assert.doesNotMatch(out, /Context budget/)
+})
+
+test("report renders the attention section with position and risk", () => {
+  const budget: ContextBudget = {
+    files: [],
+    alwaysOnTokens: 10000,
+    onDemandTokens: 0,
+    totalEstimatedTokens: 10000,
+    attention: [
+      { relPath: "CLAUDE.md", tokens: 5400, share: 54, position: "top", risk: false },
+      { relPath: ".cursor/rules/style.mdc", tokens: 3000, share: 30, position: "middle", risk: true },
+    ],
+  }
+  const out = generateReport("/project", [], undefined, budget)
+  assert.match(out, /## Always-on attention \(estimate\)/)
+  assert.match(out, /lost in the middle/)
+  assert.match(out, /\| 1 \| CLAUDE\.md \| 5,400 \| 54% \| top \| ok \|/)
+  assert.match(out, /\| 2 \| \.cursor\/rules\/style\.mdc \| 3,000 \| 30% \| middle \| ⚠️\s+under-weighted \|/)
+})
+
+test("report has no attention section without always-on files", () => {
+  const budget: ContextBudget = { files: [], alwaysOnTokens: 0, onDemandTokens: 0, totalEstimatedTokens: 0, attention: [] }
+  assert.doesNotMatch(generateReport("/project", [], undefined, budget), /Always-on attention/)
 })
 
 test("report has no budget table when budget is omitted", () => {

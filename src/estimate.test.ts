@@ -47,4 +47,36 @@ test("buildContextBudget handles an empty project", () => {
   assert.deepEqual(budget.files, [])
   assert.equal(budget.totalEstimatedTokens, 0)
   assert.equal(budget.alwaysOnTokens, 0)
+  assert.deepEqual(budget.attention, [])
+})
+
+test("buildContextBudget ranks always-on files with position + risk for a large context", () => {
+  const big = "word ".repeat(2500) // ~3270 tokens each → 3 files clear the 8000 gate
+  const config = makeConfig({
+    claudeMdFiles: [cf("a-top.md", big), cf("b-middle.md", big), cf("c-bottom.md", big)],
+  })
+  const { attention, alwaysOnTokens } = buildContextBudget(config)
+  assert.ok(alwaysOnTokens > 8000)
+  const by = Object.fromEntries(attention.map((a) => [a.relPath, a]))
+  assert.equal(by["a-top.md"].position, "top")
+  assert.equal(by["b-middle.md"].position, "middle")
+  assert.equal(by["c-bottom.md"].position, "bottom")
+  assert.equal(by["b-middle.md"].risk, true) // substantial file in the middle
+  assert.equal(by["a-top.md"].risk, false)
+  assert.ok(Math.abs(attention.reduce((s, a) => s + a.share, 0) - 100) <= 1)
+})
+
+test("buildContextBudget marks position n/a and no risk for a small always-on context", () => {
+  const config = makeConfig({ claudeMdFiles: [cf("CLAUDE.md", "short content"), cf("x/CLAUDE.md", "more")] })
+  const { attention, alwaysOnTokens } = buildContextBudget(config)
+  assert.ok(alwaysOnTokens < 8000)
+  assert.ok(attention.length > 0)
+  assert.ok(attention.every((a) => a.position === "n/a" && a.risk === false))
+})
+
+test("buildContextBudget sorts attention by token weight (heaviest first)", () => {
+  const config = makeConfig({
+    claudeMdFiles: [cf("small.md", "word ".repeat(50)), cf("big.md", "word ".repeat(500))],
+  })
+  assert.equal(buildContextBudget(config).attention[0].relPath, "big.md")
 })

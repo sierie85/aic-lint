@@ -45,6 +45,23 @@ export function generateReport(
     lines.push(`| **Total** | **${fmt(budget.totalEstimatedTokens)}** | |`, "")
   }
 
+  if (budget && budget.attention.length > 0) {
+    lines.push(
+      "## Always-on attention (estimate)",
+      "",
+      'Heuristic: models attend best to the start and end of long context; large files',
+      'in the middle ("lost in the middle") risk being under-weighted. Not a measured value.',
+      "",
+      "| # | File | ~Tokens | Share | Position | Risk |",
+      "|---|---|---|---|---|---|",
+    )
+    budget.attention.forEach((a, i) => {
+      const risk = a.risk ? "⚠️  under-weighted" : "ok"
+      lines.push(`| ${i + 1} | ${a.relPath} | ${fmt(a.tokens)} | ${a.share}% | ${a.position} | ${risk} |`)
+    })
+    lines.push("")
+  }
+
   const sections: { level: Finding["level"]; heading: string; prefix: string }[] = [
     { level: "ERROR", heading: "Errors (fix before next session)", prefix: "- ❌ " },
     { level: "WARN", heading: "Warnings", prefix: "- ⚠️  " },

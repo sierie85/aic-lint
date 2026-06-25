@@ -86,6 +86,26 @@ session (all `CLAUDE.md`, `AGENTS.md`/`AGENTS.override.md`/`.codex/AGENTS.md`,
 always-on number is the per-session cost that actually matters; the `Context budget`
 check (dimension *efficiency*) warns when it exceeds ~8,000 tokens (error at ~16,000).
 
+## Attention (lost in the middle)
+
+For the always-on files the report also prints an **attention ranking**: each file's
+share of the always-on budget plus an estimated *position* in the assembled context.
+This builds on a well-documented effect — models attend best to the **start and end**
+of a long context and neglect the **middle** ("lost in the middle", Liu et al. 2023).
+A large file whose midpoint falls in the middle band is flagged as **under-weighted**.
+
+Important honesty caveats:
+
+- These are **deterministic proxies, not measured attention.** Real attention is
+  internal to the model and depends on the actual prompt; it cannot be computed offline.
+- *Position* only kicks in once the always-on context is large enough for the effect to
+  matter (above the budget warn threshold); below that it is reported as `n/a`.
+- The assumed file **order** (the order always-on files are concatenated) is an
+  approximation of what each assistant actually does.
+
+The point is *relative guidance* — "this heavy file is buried in the middle, consider
+moving it up or trimming it" — never a precise weight.
+
 ## Usage modes
 
 - **CLI** — straight in the terminal, Markdown or `--json`

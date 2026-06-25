@@ -46,9 +46,22 @@ export interface BudgetFile {
   alwaysOn: boolean // loaded into context every session (vs. on-demand)
 }
 
+export type AttentionPosition = "top" | "middle" | "bottom" | "n/a"
+
+// Per always-on file: its share of the always-on budget and a "lost in the
+// middle" position estimate. Deterministic proxies, never measured attention.
+export interface AttentionEntry {
+  relPath: string
+  tokens: number
+  share: number // percent of always-on tokens (0–100)
+  position: AttentionPosition
+  risk: boolean // substantial file stuck in the middle of a large context
+}
+
 export interface ContextBudget {
   files: BudgetFile[]
   alwaysOnTokens: number
   onDemandTokens: number
   totalEstimatedTokens: number
+  attention: AttentionEntry[]
 }

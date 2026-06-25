@@ -1,7 +1,7 @@
 {
   "name": "aic-lint",
   "version": "0.1.0",
-  "description": "Local, deterministic linter for AI coding-assistant configs (CLAUDE.md, AGENTS.md, skills, agents) — with auto-fix.",
+  "description": "Local, deterministic AI context optimizer & config linter: measures your always-on per-session token budget, ranks files by weight and lost-in-the-middle position, and lints CLAUDE.md/AGENTS.md/Cursor configs.",
   "license": "MIT",
   "repository": {
     "type": "git",
