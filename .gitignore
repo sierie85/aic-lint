@@ -1,5 +1,8 @@
 node_modules/
-dist/
 .env
 .venv/
 *.log
+
+# dist/ is intentionally committed so `npm i -g github:sierie85/aic-lint`
+# works without a build step (no tsc/devDeps needed at install time).
+# Run `npm run build` before committing source changes to keep it in sync.
