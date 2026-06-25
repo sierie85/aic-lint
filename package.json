@@ -18,7 +18,7 @@
     "audit": "tsx src/index.ts",
     "build": "tsc -p tsconfig.build.json && node -e \"require('fs').chmodSync('dist/index.js', 0o755)\"",
     "prepack": "npm run build",
-    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test": "node --import tsx --test src/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
