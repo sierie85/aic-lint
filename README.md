@@ -53,15 +53,25 @@ On-demand context: ~4,300 tokens
 
 Requirement: **Node.js ≥ 18**.
 
-### One-line install (recommended)
+### Install (clone + global link)
 
-Install globally straight from GitHub — no clone, no manual build:
+Clone once, then install globally from the clone:
 
 ```bash
-npm install -g github:sierie85/aic-lint
+git clone https://github.com/sierie85/aic-lint ~/.aic-lint
+cd ~/.aic-lint
+npm install -g .
 ```
 
-`aic-lint` is now available in every project. To update, run the same command again.
+`aic-lint` is now available in every project. No build step and no extra
+dependencies — the repo ships precompiled (`dist/` is committed).
+
+> **Keep the clone.** The global install links to `~/.aic-lint`, so don't delete it.
+> To update: `cd ~/.aic-lint && git pull` — the global `aic-lint` updates automatically.
+
+> **Why not `npm i -g github:…`?** npm's *global* install from a git URL symlinks the
+> package into a temporary cache that is then deleted, leaving a broken `aic-lint`
+> command. Installing from a local clone (or an npm tarball) avoids that.
 
 Then make the `/audit` slash command available in **all** your projects at once:
 
@@ -84,13 +94,13 @@ works everywhere without copying anything. Override the detection with flags:
 | `--all` | Install for both tools |
 | `--project` | Put the Claude command in the current repo (`./.claude/commands/`) instead of user-level |
 
-### From a local clone (for development)
+### Development
 
 ```bash
-git clone https://github.com/sierie85/aic-lint ~/.aic-lint
 cd ~/.aic-lint
-npm install        # installs dev tools and builds dist/
-npm install -g .
+npm install        # dev tools (tsx, typescript) for tests/builds
+npm test           # run the suite
+npm run build      # recompile dist/ (run before committing source changes)
 ```
 
 ---

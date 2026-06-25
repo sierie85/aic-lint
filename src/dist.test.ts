@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url"
 
 // Guards the *packaging* layer that unit tests otherwise miss: the committed
 // dist/index.js must be a runnable bin (correct shebang + executable bit), or
-// `npm i -g github:...` links a bin that the OS refuses to exec ("Permission
-// denied" / "command not found"). This is what bit us in real installs.
+// `npm install -g .` links a bin that the OS refuses to exec ("Permission
+// denied"). This is what bit us in real installs.
 const entry = fileURLToPath(new URL("../dist/index.js", import.meta.url))
 
 test("dist/index.js starts with a node shebang", () => {
